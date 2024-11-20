@@ -1,20 +1,37 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
+	"strconv"
+
 	"shirinec.com/config"
+	"shirinec.com/internal/db"
+	"shirinec.com/internal/handlers"
+	"shirinec.com/internal/repositories"
+	"shirinec.com/internal/routes"
 )
 
 func main() {
 	config.Load()
 
-	r := gin.Default()
+    database, err := db.NewDatabase()
+    if err != nil {
+        log.Fatalf("Failed to connect to database: %v", err)
+    }
+    defer database.Close()
 
-	port := config.AppConfig.Port
+    userRepo := repositories.NewUserRepository(database.Pool)
+    
+    deps := handler.Dependencies{
+        UserRepo: userRepo,
+    }
+
+    r := routes.SetupRouter(deps)
+
+	port := strconv.Itoa(config.AppConfig.Port)
 	log.Printf("Starting %s in %s mode on port %s", config.AppConfig.AppName, config.AppConfig.Env, port)
 
     if err := r.Run(":" + port); err != nil {
-    log.Fatalf("Failed to start server: %v", err)
+        log.Fatalf("Failed to start server: %v", err)
     }
 }

@@ -1,23 +1,36 @@
 package config
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	AppName      string
-	Port         string
-	Env          string
-	DatabaseURL  string
-	JWTSecret    string
+	AppName                 string
+	Port                    int
+	Env                     string
+	DatabaseURL             string
+    JWTSecret               string
+    PoolSize                int
+    Timeout                 time.Duration
+    AccessTokenDuration     time.Duration
+    RefreshTokenDuration    time.Duration
 }
 
 var AppConfig *Config
 
 
 func Load(){
+
+    if err := godotenv.Load(); err != nil {
+        log.Fatal("No .env file found!")
+    }
+
     viper.SetConfigName("config")
     viper.SetConfigType("yaml")
     viper.AddConfigPath(".")
@@ -25,6 +38,10 @@ func Load(){
     viper.SetDefault("AppName", "PersonalFinanceApp")
     viper.SetDefault("Port", 5500)
     viper.SetDefault("Env", "development")
+    viper.SetDefault("PoolSize", 10)
+    viper.SetDefault("Timeout", 5 * time.Second)
+    viper.SetDefault("AccessTokenRefresh", 15 * time.Minute)
+    viper.SetDefault("RefreshTokenDuration", 168 * time.Hour)
 
     viper.AutomaticEnv()
 
@@ -33,12 +50,19 @@ func Load(){
     }
 
     AppConfig = &Config{
-        AppName:        viper.GetString("AppName"),
-        Port:           viper.GetString("Port"),
-        Env:            viper.GetString("Env"),
-        DatabaseURL:    viper.GetString("DatabaseURL"),
-        JWTSecret:      viper.GetString("JWTSecret"),
+        AppName: viper.GetString("AppName"),
+        Port: viper.GetInt("server.port"),
+        Env: viper.GetString("server.env"),
+        PoolSize: viper.GetInt("database.pool_size"),
+        Timeout: viper.GetDuration("database.timeout"),
+        DatabaseURL: getEnvOrDefault("DATABASE_URL", ""),
+        JWTSecret: getEnvOrDefault("JWT_SECRET", ""),
+        AccessTokenDuration: viper.GetDuration("access_token_duration"),
+        RefreshTokenDuration: viper.GetDuration("refresh_token_duration"),
     }
+    println(viper.GetInt("database.pool_size"))
+
+    fmt.Printf("%+v", AppConfig)
 
     if AppConfig.DatabaseURL == "" {
         log.Fatal("DATABASE_URL is required but not set")
@@ -49,4 +73,12 @@ func Load(){
     }
 
     log.Printf("Config loaded: %+v", AppConfig)
+}
+
+func getEnvOrDefault(key, defaultValue string) string {
+    value := os.Getenv(key)
+    if value == "" {
+        return defaultValue
+    }
+    return value
 }
