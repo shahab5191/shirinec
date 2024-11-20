@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/models"
@@ -22,8 +23,12 @@ func NewUserRepository(db *pgxpool.Pool) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, user *models.User) error {
-	query := "INSERT INTO users (id, name, email, ip, password) VALUES ($1, $2, $3, $4, $5) RETURNING id"
-	err := r.db.QueryRow(ctx, query, user.ID, user.Name, user.Email, user.IP, user.Password).Scan(&user.ID)
+	query := "INSERT INTO users (id, name, email, ip, password, last_login) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+    currentTime := time.Now().UTC()
+    user.LastLogin = currentTime
+    user.CreatedDate = currentTime
+    user.UpdatedDate = currentTime
+	err := r.db.QueryRow(ctx, query, user.ID, user.Name, user.Email, user.IP, user.Password, currentTime).Scan(&user.ID)
     return err
 }
 
