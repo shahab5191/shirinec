@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -11,33 +12,54 @@ import (
 	"shirinec.com/internal/services"
 )
 
-type AuthHandler struct{
-    authService services.AuthService
+type AuthHandler struct {
+	authService services.AuthService
 }
 
-func NewAuthHandler(authService services.AuthService) *AuthHandler{
-    return &AuthHandler{authService: authService}
+func NewAuthHandler(authService services.AuthService) *AuthHandler {
+	return &AuthHandler{authService: authService}
+}
+
+func (h *AuthHandler) SignUp(c *gin.Context) {
+	var input dto.CreateUserRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input!"})
+		return
+	}
+
+	response, err := h.authService.CreateUser(context.Background(), &input, c.ClientIP())
+	if err != nil {
+		if errors.Is(err, &server_errors.UserAlreadyExistsError) {
+			c.JSON(server_errors.UserAlreadyExistsError.Code, server_errors.UserAlreadyExistsError.Message)
+            return
+		}
+		log.Printf("Error Creating user: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user!"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
-    var credentials dto.LoginRequest
-    if err := c.ShouldBindJSON(&credentials); err != nil {
-        log.Printf("ERROR: %s", err)
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials format!"})
-        return
-    }
+	var credentials dto.LoginRequest
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		log.Printf("ERROR: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials format!"})
+		return
+	}
 
-    loginResponse, err := h.authService.Login(credentials.Email, credentials.Password)
-    var se *server_errors.SError
-    if err != nil {
-        if errors.As(err, &se){
-            c.JSON(se.Code, gin.H{"error": se.Message})
-            return
-        }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error!"})
-        return
-    }
+	loginResponse, err := h.authService.Login(credentials.Email, credentials.Password)
+	var se *server_errors.SError
+	if err != nil {
+		if errors.As(err, &se) {
+			c.JSON(se.Code, gin.H{"error": se.Message})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error!"})
+		return
+	}
 
-    c.JSON(http.StatusOK, loginResponse)
-    return
+	c.JSON(http.StatusOK, loginResponse)
+	return
 }

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,7 +36,6 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (models.U
     var user models.User
     err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.IP, &user.Password)
     if err != nil {
-        log.Printf("ERROR: %s", err)
         return user, err
     }
     return user, nil

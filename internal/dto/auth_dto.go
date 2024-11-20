@@ -7,7 +7,7 @@ type LoginRequest struct {
     Password    string  `json:"password" binding:"required,min=8"`
 }
 
-type CreateUserDTO struct {
+type CreateUserRequest struct {
     Email       string  `json:"email" binding:"required"`
     Password    string  `json:"password" binding:"required,min=8"`
 }

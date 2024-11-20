@@ -13,3 +13,4 @@ func (e *SError) Error() string {
 
 var CredentialError = SError{Code: http.StatusBadRequest, Message: "Credentials are not correct!"}
 var InternalError = SError{Code: http.StatusInternalServerError, Message: "Internal error!"}
+var UserAlreadyExistsError = SError{Code: http.StatusBadRequest, Message: "User already exists!"}

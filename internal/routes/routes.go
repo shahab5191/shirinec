@@ -9,14 +9,13 @@ import (
 
 func SetupRouter(deps handler.Dependencies) *gin.Engine {
     r := gin.Default()
-    userHandler := handler.NewUserHandler(deps.UserRepo)
     userService := services.NewAuthService(
         deps.UserRepo,
         config.AppConfig.JWTSecret,
     )
     authHandler := handler.NewAuthHandler(*userService)
 
-    r.POST("/auth/signup", userHandler.CreateUser)
+    r.POST("/auth/signup", authHandler.SignUp)
     r.POST("/auth/login", authHandler.Login)
     return r
 }
