@@ -57,8 +57,8 @@ func Load(){
         Timeout: viper.GetDuration("database.timeout"),
         DatabaseURL: getEnvOrDefault("DATABASE_URL", ""),
         JWTSecret: getEnvOrDefault("JWT_SECRET", ""),
-        AccessTokenDuration: viper.GetDuration("access_token_duration"),
-        RefreshTokenDuration: viper.GetDuration("refresh_token_duration"),
+        AccessTokenDuration: viper.GetDuration("services.auth.access_token_duration"),
+        RefreshTokenDuration: viper.GetDuration("services.auth.refresh_token_duration"),
     }
     println(viper.GetInt("database.pool_size"))
 

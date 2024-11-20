@@ -3,9 +3,7 @@ package services
 import (
 	"context"
 	"log"
-	"time"
 
-	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
@@ -33,7 +31,7 @@ func (s *AuthService) Login(email, password string) (dto.LoginResponse, error) {
 
     hashedPassword, err := utils.HashPassword(password)
     if err != nil {
-        log.Printf("ERROR: %s", err)
+        log.Printf("Error hashing password: %s", err)
         return res, &server_errors.InternalError
     }
 
@@ -43,17 +41,22 @@ func (s *AuthService) Login(email, password string) (dto.LoginResponse, error) {
         return res, &server_errors.CredentialError
     }
 
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-        "id": user.ID,
-        "email": user.Email,
-        "exp": time.Now().Add(time.Hour * 24).Unix(),
-    })
-
-    tokenString, err := token.SignedString([]byte(s.jwtSecret))
+    accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Email)
     if err != nil {
-        log.Printf("ERROR: %s", err)
+        log.Printf("Error generating access token: %s", err)
+        return res, &server_errors.InternalError
+    }
+    refreshToken, err := utils.GenerateRefreshToken(user.ID.String(), user.Email)
+    if err != nil {
+        log.Printf("Error generating refresh token: %s", err)
         return res, &server_errors.InternalError
     }
 
-    return tokenString, nil
+    response := dto.LoginResponse{
+        ID: user.ID,
+        AccessToken: accessToken,
+        RefreshToken: refreshToken,
+    }
+
+    return response, nil
 }

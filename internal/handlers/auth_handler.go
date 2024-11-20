@@ -27,7 +27,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
         return
     }
 
-    token, err := h.authService.Login(credentials.Email, credentials.Password)
+    loginResponse, err := h.authService.Login(credentials.Email, credentials.Password)
     var se *server_errors.SError
     if err != nil {
         if errors.As(err, &se){
@@ -38,6 +38,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"result": token})
+    c.JSON(http.StatusOK, loginResponse)
     return
 }

@@ -2,8 +2,10 @@ server:
   port: 5500
   host: localhost
   env: development
-  access_token_duration: 15m
-  refresh_token_duration: 168h
 database:
   timeout: 5s
   pool_size: 10
+services:
+  auth:
+    access_token_duration: 15m
+    refresh_token_duration: 168h
