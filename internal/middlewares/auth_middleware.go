@@ -25,7 +25,7 @@ func AuthMiddleWare() gin.HandlerFunc {
             return
         }
 
-        claims, err := utils.ParseToken(tokenParts[1])
+        claims, err := utils.ParseAccessToken(tokenParts[1])
         if err != nil {
             var serverError *server_errors.SError
             if errors.As(err, &serverError) {

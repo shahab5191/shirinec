@@ -16,6 +16,7 @@ type Config struct {
 	Env                     string
 	DatabaseURL             string
     JWTSecret               string
+    JWTRefreshSecret        string
     PoolSize                int
     Timeout                 time.Duration
     AccessTokenDuration     time.Duration
@@ -57,6 +58,7 @@ func Load(){
         Timeout: viper.GetDuration("database.timeout"),
         DatabaseURL: getEnvOrDefault("DATABASE_URL", ""),
         JWTSecret: getEnvOrDefault("JWT_SECRET", ""),
+        JWTRefreshSecret: getEnvOrDefault("JWT_REFRESH_SECRET", ""),
         AccessTokenDuration: viper.GetDuration("services.auth.access_token_duration"),
         RefreshTokenDuration: viper.GetDuration("services.auth.refresh_token_duration"),
     }

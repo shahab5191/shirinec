@@ -22,16 +22,16 @@ func HashPassword(password string) (string, error) {
 
 func GenerateAccessToken(id, email string) (string, error){
     expirationTime := time.Now().Add(config.AppConfig.AccessTokenDuration)
-    return generateToken(id, email, expirationTime)
+    return generateToken(id, email, expirationTime, []byte(config.AppConfig.JWTSecret))
 
 }
 
 func GenerateRefreshToken(id, email string) (string, error){
     expirationTime := time.Now().Add(config.AppConfig.RefreshTokenDuration)
-    return generateToken(id, email, expirationTime)
+    return generateToken(id, email, expirationTime, []byte(config.AppConfig.JWTRefreshSecret))
 }
 
-func generateToken(id, email string, exp time.Time) (string, error) {
+func generateToken(id, email string, exp time.Time, secret []byte) (string, error) {
     claims := jwt.MapClaims{
         "id": id,
         "email": email,
@@ -39,16 +39,24 @@ func generateToken(id, email string, exp time.Time) (string, error) {
     }
 
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    signedToken, err := token.SignedString([]byte(config.AppConfig.JWTSecret))
+    signedToken, err := token.SignedString(secret)
     if err != nil {
         return "", &server_errors.InternalError
     }
     return signedToken, nil
 }
 
-func ParseToken(refreshToken string) (jwt.MapClaims, error) {
-    parsedToken, err := jwt.ParseWithClaims(refreshToken, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
-        return []byte(config.AppConfig.JWTSecret), nil
+func ParseRefreshToken(refreshToken string) (jwt.MapClaims, error) {
+    return parseToken(refreshToken, []byte(config.AppConfig.JWTRefreshSecret))
+}
+
+func ParseAccessToken(accessToken string) (jwt.MapClaims, error) {
+    return parseToken(accessToken, []byte(config.AppConfig.JWTSecret))
+}
+
+func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
+    parsedToken, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+        return secret, nil
     })
     if err != nil {
         return nil, err

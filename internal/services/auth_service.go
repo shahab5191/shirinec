@@ -121,7 +121,7 @@ func (s *AuthService) Login(email, password string) (dto.LoginResponse, error) {
 }
 
 func (s *AuthService) Refresh(token string) (*dto.LoginResponse, error) {
-    claims, err := utils.ParseToken(token)
+    claims, err := utils.ParseRefreshToken(token)
     if err != nil {
         log.Printf("Error parsing refresh token: %+v\n", err)
         var validationErr *jwt.ValidationError
