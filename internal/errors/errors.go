@@ -23,4 +23,6 @@ var (
     TokenMalformed = SError{Code: http.StatusBadRequest, Message: "Token is malformed or tempered!"}
     TokenExpired = SError{Code: http.StatusBadRequest, Message: "Token expired!"}
     TokenSignatureInvalid = SError{Code: http.StatusBadRequest, Message: "Token signature is not correct"}
+    InvalidAuthorizationHeader = SError{Code: http.StatusUnauthorized, Message: "Invalid authorization format"}
+    Unauthorized = SError{Code: http.StatusUnauthorized, Message: "You are not authorized"}
 )
