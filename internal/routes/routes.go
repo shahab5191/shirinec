@@ -17,5 +17,6 @@ func SetupRouter(deps handler.Dependencies) *gin.Engine {
 
     r.POST("/auth/signup", authHandler.SignUp)
     r.POST("/auth/login", authHandler.Login)
+    r.POST("/auth/refresh", authHandler.RefreshToken)
     return r
 }

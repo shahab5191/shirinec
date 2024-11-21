@@ -14,6 +14,10 @@ type CreateUserRequest struct {
 
 type LoginResponse struct {
     ID              uuid.UUID   `json:"id"`
-    AccessToken     string      `json:"access_token"`
-    RefreshToken    string      `json:"refresh_token"`
+    AccessToken     string      `json:"accessToken"`
+    RefreshToken    string      `json:"refreshToken"`
+}
+
+type RefreshTokenRequest struct {
+    RefreshToken    string  `json:"refreshToken"`
 }

@@ -11,6 +11,16 @@ func (e *SError) Error() string {
     return e.Message
 }
 
-var CredentialError = SError{Code: http.StatusBadRequest, Message: "Credentials are not correct!"}
-var InternalError = SError{Code: http.StatusInternalServerError, Message: "Internal error!"}
-var UserAlreadyExistsError = SError{Code: http.StatusBadRequest, Message: "User already exists!"}
+func (e *SError) Unwrap() (int, map[string]string){
+    return e.Code, map[string]string{"error": e.Message}
+}
+
+var (
+    CredentialError = SError{Code: http.StatusBadRequest, Message: "Credentials are not correct!"}
+    InternalError = SError{Code: http.StatusInternalServerError, Message: "Internal error!"}
+    UserAlreadyExistsError = SError{Code: http.StatusBadRequest, Message: "User already exists!"}
+    InvalidInput = SError{Code: http.StatusBadRequest, Message: "Invalid request data or format!"}
+    TokenMalformed = SError{Code: http.StatusBadRequest, Message: "Token is malformed or tempered!"}
+    TokenExpired = SError{Code: http.StatusBadRequest, Message: "Token expired!"}
+    TokenSignatureInvalid = SError{Code: http.StatusBadRequest, Message: "Token signature is not correct"}
+)

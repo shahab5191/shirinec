@@ -53,13 +53,35 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var se *server_errors.SError
 	if err != nil {
 		if errors.As(err, &se) {
-			c.JSON(se.Code, gin.H{"error": se.Message})
+			c.JSON(se.Unwrap())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error!"})
+		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	c.JSON(http.StatusOK, loginResponse)
 	return
+}
+
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+    var requestDTO dto.RefreshTokenRequest
+    if err := c.ShouldBindJSON(&requestDTO); err != nil {
+        log.Printf("Error binding request to dto: %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    response, err := h.authService.Refresh(requestDTO.RefreshToken)
+    if err != nil {
+        var serverError *server_errors.SError
+        if errors.As(err, &serverError){
+            c.JSON(serverError.Unwrap())
+            return
+        }
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+    c.JSON(http.StatusOK, response)
+    return
 }
