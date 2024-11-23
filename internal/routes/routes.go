@@ -2,29 +2,28 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"shirinec.com/config"
 	"shirinec.com/internal/handlers"
-	"shirinec.com/internal/middlewares"
-	"shirinec.com/internal/services"
 )
 
-func SetupRouter(deps handler.Dependencies) *gin.Engine {
-    r := gin.Default()
-    userService := services.NewAuthService(
-        deps.UserRepo,
-        config.AppConfig.JWTSecret,
-    )
-    incomeService := services.NewIncomeService(
-        deps.IncomeCategoryRepo,
-    )
-    authHandler := handler.NewAuthHandler(userService)
-    incomeCategoryHandler := handler.NewIncomeCategoryHandler(incomeService)
+type Router interface {
+    SetupRouter()
+	setupIncomeRouter()
+	setupAuthRouter()
+}
 
-    r.POST("/auth/signup", authHandler.SignUp)
-    r.POST("/auth/login", authHandler.Login)
-    r.POST("/auth/refresh", authHandler.RefreshToken)
+type router struct {
+	GinEngine *gin.Engine
+	Deps      *handler.Dependencies
+}
 
-    r.GET("/income/category", middlewares.AuthMiddleWare(), incomeCategoryHandler.List)
-    r.GET("/income/category/:id", middlewares.AuthMiddleWare(), incomeCategoryHandler.GetByID)
-    return r
+func NewRouter(ginEngine *gin.Engine, deps *handler.Dependencies) Router {
+	return &router{
+		GinEngine: ginEngine,
+		Deps:      deps,
+	}
+}
+
+func (r *router) SetupRouter() {
+	r.setupAuthRouter()
+	r.setupIncomeRouter()
 }
