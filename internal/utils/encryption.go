@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -48,45 +47,12 @@ func generateToken(id, email string, exp time.Time, secret []byte) (string, erro
 }
 
 func ParseRefreshToken(refreshToken string) (jwt.MapClaims, error) {
-    claims, err := parseToken(refreshToken, []byte(config.AppConfig.JWTRefreshSecret))
-    if err != nil {
-        log.Printf("Error parsing refresh token: %+v\n", err)
-        var validationErr *jwt.ValidationError
-        if errors.As(err, &validationErr){
-            if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
-                return nil, &server_errors.TokenMalformed
-            }else if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
-                return nil, &server_errors.TokenExpired
-            }else if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0{
-                return nil, &server_errors.TokenSignatureInvalid
-            }else{
-                return nil, &server_errors.InternalError
-            }
-        }
-        return nil, &server_errors.InternalError
-    }
-    return claims, nil
+    return parseToken(refreshToken, []byte(config.AppConfig.JWTRefreshSecret))
+    
 }
 
 func ParseAccessToken(accessToken string) (jwt.MapClaims, error) {
-    claims, err := parseToken(accessToken, []byte(config.AppConfig.JWTSecret))
-    if err != nil {
-        log.Printf("Error parsing refresh token: %+v\n", err)
-        var validationErr *jwt.ValidationError
-        if errors.As(err, &validationErr){
-            if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
-                return nil, &server_errors.TokenMalformed
-            }else if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
-                return nil, &server_errors.TokenExpired
-            }else if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0{
-                return nil, &server_errors.TokenSignatureInvalid
-            }else{
-                return nil, &server_errors.InternalError
-            }
-        }
-        return nil, &server_errors.InternalError
-    }
-    return claims, nil
+    return parseToken(accessToken, []byte(config.AppConfig.JWTSecret))
 }
 
 func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
@@ -94,7 +60,20 @@ func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
         return secret, nil
     })
     if err != nil {
-        return nil, err
+        log.Printf("Error parsing refresh token: %+v\n", err)
+        var validationErr *jwt.ValidationError
+        if errors.As(err, &validationErr){
+            if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
+                return nil, &server_errors.TokenMalformed
+            }else if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
+                return nil, &server_errors.TokenExpired
+            }else if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0{
+                return nil, &server_errors.TokenSignatureInvalid
+            }else{
+                return nil, &server_errors.InternalError
+            }
+        }
+        return nil, &server_errors.InternalError
     }
 
     if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
@@ -103,5 +82,5 @@ func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
         log.Printf("parsedToken: %+v\n", claims)
     }
 
-    return nil, fmt.Errorf("Invalid token")
+    return nil, &server_errors.InvalidToken
 }

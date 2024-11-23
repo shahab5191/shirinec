@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ import (
 
 type IncomeCategoryHandler interface {
     List(c *gin.Context)
+    GetByID(c *gin.Context)
 }
 
 type incomeCategoryHandler struct {
@@ -40,7 +42,32 @@ func (h *incomeCategoryHandler) List(c *gin.Context) {
     categories, err := h.incomeCategoryService.ListCategories(userID, input.Limit, input.Offset)
     if err != nil {
         c.JSON(server_errors.InternalError.Unwrap())
+        return
     }
 
     c.JSON(http.StatusOK, categories)
+}
+
+func (h * incomeCategoryHandler)GetByID (c *gin.Context) {
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil{
+        log.Printf("[Error] - IncomeCategoryHandler.GetByID - parsing id param: %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    category, err := h.incomeCategoryService.GetByID(userID, int(id))
+    if err != nil {
+        log.Printf("[Error] - IncomeCategoryHandler.GetByID - getting category from service: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    c.JSON(http.StatusOK, category)
 }

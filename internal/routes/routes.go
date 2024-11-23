@@ -25,5 +25,6 @@ func SetupRouter(deps handler.Dependencies) *gin.Engine {
     r.POST("/auth/refresh", authHandler.RefreshToken)
 
     r.GET("/income/category", middlewares.AuthMiddleWare(), incomeCategoryHandler.List)
+    r.GET("/income/category/:id", middlewares.AuthMiddleWare(), incomeCategoryHandler.GetByID)
     return r
 }
