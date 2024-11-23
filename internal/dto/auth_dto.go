@@ -21,4 +21,3 @@ type LoginResponse struct {
 type RefreshTokenRequest struct {
     RefreshToken    string  `json:"refreshToken"`
 }
-

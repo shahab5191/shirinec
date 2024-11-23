@@ -10,10 +10,13 @@ import (
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
+	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
+	"shirinec.com/internal/utils"
 )
 
 type IncomeCategoryHandler interface {
+    Create(c *gin.Context)
     List(c *gin.Context)
     GetByID(c *gin.Context)
 }
@@ -26,10 +29,16 @@ func NewIncomeCategoryHandler(incomeCategoryService services.IncomeCategoryServi
     return &incomeCategoryHandler{incomeCategoryService: incomeCategoryService}
 }
 
-func (h *incomeCategoryHandler) List(c *gin.Context) {
-    var input dto.ListIncomeCategoreisRequest
-    if err := c.ShouldBindQuery(&input); err != nil {
-        log.Printf("[Error] - incomeCategoryHandler.List - Bind query %+v\n", err)
+func (h *incomeCategoryHandler) Create(c *gin.Context) {
+
+    var input dto.CreateIncomeCategoryRequest
+    if err := c.ShouldBindJSON(&input); err != nil {
+        log.Printf("[Error] - incomeCategoryHandler.Create - Bind body %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    if !utils.IsValidHexColor(input.Color){
         c.JSON(server_errors.InvalidInput.Unwrap())
         return
     }
@@ -40,7 +49,37 @@ func (h *incomeCategoryHandler) List(c *gin.Context) {
         return
     }
 
-    categories, err := h.incomeCategoryService.ListCategories(userID, input.Limit, input.Offset)
+    var category models.IncomeCategory
+    category.UserID = userID
+    category.Name = input.Name
+    category.Color = input.Color
+
+    err = h.incomeCategoryService.Create(&category)
+    if err != nil {
+        log.Printf("[Error] - incomeCategoryHandler.Create - Calling repo create %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    c.JSON(http.StatusOK, category)
+}
+
+func (h *incomeCategoryHandler) List(c *gin.Context) {
+    var input dto.ListIncomeCategoreisRequest
+    if err := c.ShouldBindQuery(&input); err != nil {
+        log.Printf("[Error] - incomeCategoryHandler.List - Bind query %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+    log.Printf("Input: %+v\n", input)
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    categories, err := h.incomeCategoryService.ListCategories(userID, input.Page, input.Size)
     if err != nil {
         var sErr *server_errors.SError
         if errors.As(err, &sErr){
