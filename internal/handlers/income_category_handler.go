@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -41,7 +42,13 @@ func (h *incomeCategoryHandler) List(c *gin.Context) {
 
     categories, err := h.incomeCategoryService.ListCategories(userID, input.Limit, input.Offset)
     if err != nil {
-        c.JSON(server_errors.InternalError.Unwrap())
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr){
+            c.JSON(sErr.Unwrap())
+        }else{
+            log.Printf("[Error] - icomeCategoryHandler.List - impossible error: %+v\n", err)   
+            c.JSON(server_errors.InternalError.Unwrap())
+        }
         return
     }
 
@@ -65,7 +72,13 @@ func (h * incomeCategoryHandler)GetByID (c *gin.Context) {
     category, err := h.incomeCategoryService.GetByID(userID, int(id))
     if err != nil {
         log.Printf("[Error] - IncomeCategoryHandler.GetByID - getting category from service: %+v\n", err)
-        c.JSON(server_errors.InternalError.Unwrap())
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr) {
+            c.JSON(sErr.Unwrap())
+        }else{
+            log.Printf("[Error] - incomeCategoryHandler.GetByID - Impossible Error!: %+v\n", err)
+            c.JSON(server_errors.InternalError.Unwrap())
+        }
         return
     }
 

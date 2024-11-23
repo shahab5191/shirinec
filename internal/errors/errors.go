@@ -1,10 +1,14 @@
 package server_errors
 
-import "net/http"
+import (
+	"net/http"
+	"strconv"
+)
 
 type SError struct {
-	Message string
-	Code    int
+	Message   string
+	Code      int
+	ErrorCode int
 }
 
 func (e *SError) Error() string {
@@ -12,18 +16,22 @@ func (e *SError) Error() string {
 }
 
 func (e *SError) Unwrap() (int, map[string]string) {
-	return e.Code, map[string]string{"error": e.Message}
+	return e.Code, map[string]string{
+        "error": e.Message,
+        "code": strconv.Itoa(e.ErrorCode),
+    }
 }
 
 var (
-	CredentialError            = SError{Code: http.StatusBadRequest, Message: "Credentials are not correct!"}
-	InternalError              = SError{Code: http.StatusInternalServerError, Message: "Internal error!"}
-	UserAlreadyExistsError     = SError{Code: http.StatusBadRequest, Message: "User already exists!"}
-	InvalidInput               = SError{Code: http.StatusBadRequest, Message: "Invalid request data or format!"}
-	InvalidToken               = SError{Code: http.StatusBadRequest, Message: "Invalid token"}
-	TokenMalformed             = SError{Code: http.StatusBadRequest, Message: "Token is malformed or tempered!"}
-	TokenExpired               = SError{Code: http.StatusBadRequest, Message: "Token expired!"}
-	TokenSignatureInvalid      = SError{Code: http.StatusBadRequest, Message: "Token signature is not correct"}
-	InvalidAuthorizationHeader = SError{Code: http.StatusUnauthorized, Message: "Invalid authorization format"}
-	Unauthorized               = SError{Code: http.StatusUnauthorized, Message: "You are not authorized"}
+	CredentialError            = SError{Code: http.StatusBadRequest, Message: "Credentials are not correct!", ErrorCode: 100}
+	InternalError              = SError{Code: http.StatusInternalServerError, Message: "Internal error!", ErrorCode: 101}
+	UserAlreadyExistsError     = SError{Code: http.StatusBadRequest, Message: "User already exists!", ErrorCode: 102}
+	InvalidInput               = SError{Code: http.StatusBadRequest, Message: "Invalid request data or format!", ErrorCode: 103}
+	InvalidToken               = SError{Code: http.StatusBadRequest, Message: "Invalid token", ErrorCode: 104}
+	TokenMalformed             = SError{Code: http.StatusBadRequest, Message: "Token is malformed or tempered!", ErrorCode: 105}
+	TokenExpired               = SError{Code: http.StatusBadRequest, Message: "Token expired!", ErrorCode: 106}
+	TokenSignatureInvalid      = SError{Code: http.StatusBadRequest, Message: "Token signature is not correct", ErrorCode: 107}
+	InvalidAuthorizationHeader = SError{Code: http.StatusUnauthorized, Message: "Invalid authorization format", ErrorCode: 108}
+	Unauthorized               = SError{Code: http.StatusUnauthorized, Message: "You are not authorized", ErrorCode: 109}
+	ItemNotFound               = SError{Code: http.StatusNotFound, Message: "Requested item does not exists!", ErrorCode: 110}
 )

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -41,17 +42,25 @@ func (r *incomeCategoryRepository) List(ctx context.Context, limit int, offset i
 	var categories = make([]models.IncomeCategory, 0, limit)
 	query := "SELECT id, user_id, name, color FROM income_categories WHERE user_id = $1 LIMIT $2 OFFSET $3"
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
+    defer rows.Close()
+
 	if err != nil {
-		return &categories, err
+        return &categories, err
 	}
+
 	for rows.Next() {
 		var category models.IncomeCategory
-		err := rows.Scan(&category.ID, &category.UserID, &category.Name, &category.Color)
-        if err != nil {
-            return &categories, err
-        }
-        categories = append(categories, category)
+		errScan := rows.Scan(&category.ID, &category.UserID, &category.Name, &category.Color)
+		if errScan != nil {
+			return &categories, errScan
+		}
+		categories = append(categories, category)
 	}
+
+    if errNext := rows.Err(); errNext != nil {
+        log.Printf("[Error] - incomeCategoryRepository.List - iterating rows: %+v\n", errNext)
+        return &categories, errNext
+    }
 	return &categories, nil
 }
 
