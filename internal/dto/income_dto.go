@@ -15,11 +15,11 @@ type ListCategoriesResponse struct {
 }
 
 type CreateIncomeCategoryRequest struct {
-	Name  *string `json:"name"`
-	Color *string `json:"color"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
 }
 
 type UpdateIncomeCategoryRequest struct {
-	Name  *string    `json:"name"`
-	Color *string    `json:"color"`
+	Name  *string `json:"name"`
+	Color *string `json:"color"`
 }

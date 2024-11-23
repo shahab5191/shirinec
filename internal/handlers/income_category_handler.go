@@ -40,7 +40,7 @@ func (h *incomeCategoryHandler) Create(c *gin.Context) {
         return
     }
 
-    if !utils.IsValidHexColor(*input.Color){
+    if !utils.IsValidHexColor(input.Color){
         c.JSON(server_errors.InvalidInput.Unwrap())
         return
     }
@@ -53,8 +53,8 @@ func (h *incomeCategoryHandler) Create(c *gin.Context) {
 
     var category models.IncomeCategory
     category.UserID = userID
-    category.Name = input.Name
-    category.Color = input.Color
+    category.Name = &input.Name
+    category.Color = &input.Color
 
     err = h.incomeCategoryService.Create(&category)
     if err != nil {
