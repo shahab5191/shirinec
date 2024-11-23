@@ -10,15 +10,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"shirinec.com/internal/dto"
-	server_errors "shirinec.com/internal/errors"
+	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
 )
 
 type IncomeCategoryService interface {
 	Create(category *models.IncomeCategory) error
-	ListCategories(userID uuid.UUID, page int, size int) (*dto.ListIncomeCategoriesResponse, error)
-	GetByID(userID uuid.UUID, ID int) (*models.IncomeCategory, error)
+	ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error)
+	GetByID(userID uuid.UUID, id int) (*models.IncomeCategory, error)
+    Delete(userID uuid.UUID, id int) error
 }
 
 type incomeCategoryService struct {
@@ -33,8 +34,8 @@ func (s *incomeCategoryService) Create(category *models.IncomeCategory) error {
 	return s.incomeCategoryRepo.Create(context.Background(), category)
 }
 
-func (s *incomeCategoryService) ListCategories(userID uuid.UUID, page int, size int) (*dto.ListIncomeCategoriesResponse, error) {
-	var response dto.ListIncomeCategoriesResponse
+func (s *incomeCategoryService) ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error) {
+	var response dto.ListCategoriesResponse
 
 	limit := size
 	offset := page * size
@@ -80,4 +81,21 @@ func (s *incomeCategoryService) GetByID(userID uuid.UUID, id int) (*models.Incom
 		return category, &server_errors.InternalError
 	}
 	return category, nil
+}
+
+func (s *incomeCategoryService) Delete(userID uuid.UUID, id int) error {
+	err := s.incomeCategoryRepo.Delete(context.Background(), id, userID)
+	if err != nil {
+		log.Printf("[Error] - IncomeCategoryService.GetByID - Getting category from repository: %+v\n", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return &server_errors.ItemNotFound
+		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
+		}
+		return &server_errors.InternalError
+	}
+	return nil
 }

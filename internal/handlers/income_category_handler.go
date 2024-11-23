@@ -19,6 +19,7 @@ type IncomeCategoryHandler interface {
     Create(c *gin.Context)
     List(c *gin.Context)
     GetByID(c *gin.Context)
+    Delete(c *gin.Context)
 }
 
 type incomeCategoryHandler struct {
@@ -65,7 +66,7 @@ func (h *incomeCategoryHandler) Create(c *gin.Context) {
 }
 
 func (h *incomeCategoryHandler) List(c *gin.Context) {
-    var input dto.ListIncomeCategoreisRequest
+    var input dto.ListRequest
     if err := c.ShouldBindQuery(&input); err != nil {
         log.Printf("[Error] - incomeCategoryHandler.List - Bind query %+v\n", err)
         c.JSON(server_errors.InvalidInput.Unwrap())
@@ -122,4 +123,35 @@ func (h * incomeCategoryHandler)GetByID (c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, category)
+}
+
+
+func (h * incomeCategoryHandler)Delete (c *gin.Context) {
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil{
+        log.Printf("[Error] - IncomeCategoryHandler.Delete - parsing id param: %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    err = h.incomeCategoryService.Delete(userID, int(id))
+    if err != nil {
+        log.Printf("[Error] - IncomeCategoryHandler.Delete - getting category from service: %+v\n", err)
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr) {
+            c.JSON(sErr.Unwrap())
+        }else{
+            log.Printf("[Error] - incomeCategoryHandler.Delete - Impossible Error!: %+v\n", err)
+            c.JSON(server_errors.InternalError.Unwrap())
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"id": id})
 }

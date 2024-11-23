@@ -72,7 +72,10 @@ func (r *incomeCategoryRepository) List(ctx context.Context, limit int, offset i
 }
 
 func (r *incomeCategoryRepository) Delete(ctx context.Context, id int, userID uuid.UUID) error {
-	return nil
+    query := "DELETE FROM income_categories WHERE id = $1 AND user_id = $2 RETURNING id"
+    var deletedID int
+    err := r.db.QueryRow(ctx, query, id, userID).Scan(&deletedID)
+	return err
 }
 
 func (r *incomeCategoryRepository) Update(ctx context.Context, id int, category *models.IncomeCategory, userID uuid.UUID) error {
