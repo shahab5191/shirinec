@@ -21,3 +21,8 @@ type LoginResponse struct {
 type RefreshTokenRequest struct {
     RefreshToken    string  `json:"refreshToken"`
 }
+
+type ListIncomeCategoreisRequest struct {
+    Limit   int
+    Offset  int
+}

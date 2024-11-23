@@ -35,8 +35,5 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (models.U
     query := "SELECT id, email, ip, password FROM users WHERE users.email = $1 LIMIT 1"
     var user models.User
     err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.IP, &user.Password)
-    if err != nil {
-        return user, err
-    }
-    return user, nil
+    return user, err
 }

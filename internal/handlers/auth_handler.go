@@ -23,7 +23,7 @@ func NewAuthHandler(authService services.AuthService) *AuthHandler {
 func (h *AuthHandler) SignUp(c *gin.Context) {
 	var input dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input!"})
+		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
