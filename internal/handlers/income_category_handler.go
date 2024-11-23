@@ -20,6 +20,7 @@ type IncomeCategoryHandler interface {
     List(c *gin.Context)
     GetByID(c *gin.Context)
     Delete(c *gin.Context)
+    Update(c *gin.Context)
 }
 
 type incomeCategoryHandler struct {
@@ -39,7 +40,7 @@ func (h *incomeCategoryHandler) Create(c *gin.Context) {
         return
     }
 
-    if !utils.IsValidHexColor(input.Color){
+    if !utils.IsValidHexColor(*input.Color){
         c.JSON(server_errors.InvalidInput.Unwrap())
         return
     }
@@ -154,4 +155,41 @@ func (h * incomeCategoryHandler)Delete (c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"id": id})
+}
+
+func (h *incomeCategoryHandler) Update(c *gin.Context) {
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil{
+        log.Printf("[Error] - IncomeCategoryHandler.Update - parsing id param: %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    var input dto.UpdateIncomeCategoryRequest
+    if err := c.ShouldBindJSON(&input); err != nil {
+        log.Printf("[Error] - incomeCategoryHandler.Create - Bind body %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    if input.Color != nil && !utils.IsValidHexColor(*input.Color){
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+
+    category, err := h.incomeCategoryService.Update(&userID, id, &input)
+    if err != nil {
+        log.Printf("[Error] - incomeCategoryHandler.Create - Calling repo create %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    c.JSON(http.StatusOK, category)
 }

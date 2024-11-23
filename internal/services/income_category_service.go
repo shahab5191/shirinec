@@ -20,6 +20,7 @@ type IncomeCategoryService interface {
 	ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error)
 	GetByID(userID uuid.UUID, id int) (*models.IncomeCategory, error)
     Delete(userID uuid.UUID, id int) error
+    Update(userID *uuid.UUID, id int, category *dto.UpdateIncomeCategoryRequest) (*models.IncomeCategory ,error)
 }
 
 type incomeCategoryService struct {
@@ -98,4 +99,27 @@ func (s *incomeCategoryService) Delete(userID uuid.UUID, id int) error {
 		return &server_errors.InternalError
 	}
 	return nil
+}
+
+func (s *incomeCategoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.UpdateIncomeCategoryRequest) (*models.IncomeCategory ,error) {
+    var category models.IncomeCategory
+    category.ID = id
+    category.UserID = *userID
+    category.Color = categoryDTO.Color
+    category.Name = categoryDTO.Name
+
+	err := s.incomeCategoryRepo.Update(context.Background(), &category)
+	if err != nil {
+		log.Printf("[Error] - IncomeCategoryService.GetByID - Getting category from repository: %+v\n", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return &category, &server_errors.ItemNotFound
+		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
+		}
+		return &category, &server_errors.InternalError
+	}
+	return &category, nil
 }

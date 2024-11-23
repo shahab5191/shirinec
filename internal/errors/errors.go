@@ -17,9 +17,9 @@ func (e *SError) Error() string {
 
 func (e *SError) Unwrap() (int, map[string]string) {
 	return e.Code, map[string]string{
-        "error": e.Message,
-        "code": strconv.Itoa(e.ErrorCode),
-    }
+		"error": e.Message,
+		"code":  strconv.Itoa(e.ErrorCode),
+	}
 }
 
 var (
@@ -34,4 +34,5 @@ var (
 	InvalidAuthorizationHeader = SError{Code: http.StatusUnauthorized, Message: "Invalid authorization format", ErrorCode: 108}
 	Unauthorized               = SError{Code: http.StatusUnauthorized, Message: "You are not authorized", ErrorCode: 109}
 	ItemNotFound               = SError{Code: http.StatusNotFound, Message: "Requested item does not exists!", ErrorCode: 110}
+	EmptyUpdate                = SError{Code: http.StatusNotFound, Message: "No fields to update", ErrorCode: 111}
 )

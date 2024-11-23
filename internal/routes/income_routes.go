@@ -16,4 +16,5 @@ func (r *router) setupIncomeRouter() {
 	r.GinEngine.GET("/income/category/:id", middlewares.AuthMiddleWare(), incomeCategoryHandler.GetByID)
     r.GinEngine.POST("/income/category", middlewares.AuthMiddleWare(), incomeCategoryHandler.Create)
     r.GinEngine.DELETE("/income/category/:id", middlewares.AuthMiddleWare(), incomeCategoryHandler.Delete)
+    r.GinEngine.PUT("/income/category/:id", middlewares.AuthMiddleWare(), incomeCategoryHandler.Update)
 }
