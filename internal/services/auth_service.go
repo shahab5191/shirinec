@@ -16,16 +16,22 @@ import (
 	"shirinec.com/internal/utils"
 )
 
-type AuthService struct{
-    userRepo     repositories.UserRepository
+type AuthService interface {
+    CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (dto.LoginResponse, error)
+    Login(email, password string) (dto.LoginResponse, error)
+    Refresh(token string) (*dto.LoginResponse, error)
+}
+
+type authService struct{
+    userRepo    repositories.UserRepository
     jwtSecret   string
 }
 
-func NewAuthService(userRepo repositories.UserRepository, jwtSecret string) *AuthService{
-    return &AuthService{jwtSecret: jwtSecret, userRepo: userRepo}
+func NewAuthService(userRepo repositories.UserRepository, jwtSecret string) AuthService{
+    return &authService{jwtSecret: jwtSecret, userRepo: userRepo}
 }
 
-func (s *AuthService) CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (dto.LoginResponse, error) {
+func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (dto.LoginResponse, error) {
     var response dto.LoginResponse
     password, err := utils.HashPassword(input.Password)
     if err != nil {
@@ -80,7 +86,7 @@ func (s *AuthService) CreateUser(ctx context.Context, input *dto.CreateUserReque
     return response, nil
 }
 
-func (s *AuthService) Login(email, password string) (dto.LoginResponse, error) {
+func (s *authService) Login(email, password string) (dto.LoginResponse, error) {
     var res dto.LoginResponse
     user, err := s.userRepo.GetByEmail(context.Background(), email)
     if err != nil {
@@ -120,7 +126,7 @@ func (s *AuthService) Login(email, password string) (dto.LoginResponse, error) {
     return response, nil
 }
 
-func (s *AuthService) Refresh(token string) (*dto.LoginResponse, error) {
+func (s *authService) Refresh(token string) (*dto.LoginResponse, error) {
     claims, err := utils.ParseRefreshToken(token)
     if err != nil {
         log.Printf("Error parsing refresh token: %+v\n", err)

@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
-	server_errors "shirinec.com/internal/errors"
+	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
 )
 
@@ -15,14 +18,27 @@ type incomeCategoryHandler struct {
     incomeCategoryService services.IncomeCategoryService
 }
 
-func NewIncomeCategoryService(incomeCategoryService services.IncomeCategoryService) IncomeCategoryHandler {
+func NewIncomeCategoryHandler(incomeCategoryService services.IncomeCategoryService) IncomeCategoryHandler {
     return &incomeCategoryHandler{incomeCategoryService: incomeCategoryService}
 }
 
 func (h *incomeCategoryHandler) List(c *gin.Context) {
     var input dto.ListIncomeCategoreisRequest
-    if err := c.ShouldBindJSON(input); err != nil {
+    if err := c.ShouldBindQuery(&input); err != nil {
         c.JSON(server_errors.InvalidInput.Unwrap())
         return
     }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    categories, err := h.incomeCategoryService.ListCategories(userID, input.Limit, input.Offset)
+    if err != nil {
+        c.JSON(server_errors.InternalError.Unwrap())
+    }
+
+    c.JSON(http.StatusOK, categories)
 }

@@ -21,9 +21,11 @@ func main() {
     defer database.Close()
 
     userRepo := repositories.NewUserRepository(database.Pool)
+    incomeCategoryRepo := repositories.NewIncomeCategoryRepository(database.Pool)
     
     deps := handler.Dependencies{
         UserRepo: userRepo,
+        IncomeCategoryRepo: incomeCategoryRepo,
     }
 
     r := routes.SetupRouter(deps)

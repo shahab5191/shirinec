@@ -38,7 +38,7 @@ func (r *incomeCategoryRepository) GetByID(ctx context.Context, ID int, userID u
 }
 
 func (r *incomeCategoryRepository) List(ctx context.Context, limit int, offset int, userID uuid.UUID) (*[]models.IncomeCategory, error) {
-	var categories = make([]models.IncomeCategory, limit)
+	var categories = make([]models.IncomeCategory, 0, limit)
 	query := "SELECT id, user_id, name, color FROM income_categories WHERE user_id = $1 LIMIT $2 OFFSET $3"
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 	if err != nil {
