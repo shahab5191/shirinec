@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -129,20 +128,7 @@ func (s *authService) Login(email, password string) (dto.LoginResponse, error) {
 func (s *authService) Refresh(token string) (*dto.LoginResponse, error) {
     claims, err := utils.ParseRefreshToken(token)
     if err != nil {
-        log.Printf("Error parsing refresh token: %+v\n", err)
-        var validationErr *jwt.ValidationError
-        if errors.As(err, &validationErr){
-            if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
-                return nil, &server_errors.TokenMalformed
-            }else if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
-                return nil, &server_errors.TokenExpired
-            }else if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0{
-                return nil, &server_errors.TokenSignatureInvalid
-            }else{
-                return nil, &server_errors.InternalError
-            }
-        }
-        return nil, &server_errors.InternalError
+        return nil, err
     }
 
     id, ok := claims["id"].(string)

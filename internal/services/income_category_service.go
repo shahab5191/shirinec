@@ -23,6 +23,8 @@ func NewIncomeService(incomeCategoryRepo repositories.IncomeCategoryRepository) 
 
 func (s *incomeCategoryService) ListCategories(userID uuid.UUID, limit int, offset int) (*[]models.IncomeCategory, error) {
     categories, err := s.incomeCategoryRepo.List(context.Background(), limit, offset, userID)
-    log.Printf("%+v", categories)
+    if err != nil {
+        log.Printf("%+v", err)
+    }
 	return categories, err
 }

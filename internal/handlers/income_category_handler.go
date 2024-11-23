@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ func NewIncomeCategoryHandler(incomeCategoryService services.IncomeCategoryServi
 func (h *incomeCategoryHandler) List(c *gin.Context) {
     var input dto.ListIncomeCategoreisRequest
     if err := c.ShouldBindQuery(&input); err != nil {
+        log.Printf("[Error] - incomeCategoryHandler.List - Bind query %+v\n", err)
         c.JSON(server_errors.InvalidInput.Unwrap())
         return
     }

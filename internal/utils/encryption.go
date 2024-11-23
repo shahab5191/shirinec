@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -47,11 +48,45 @@ func generateToken(id, email string, exp time.Time, secret []byte) (string, erro
 }
 
 func ParseRefreshToken(refreshToken string) (jwt.MapClaims, error) {
-    return parseToken(refreshToken, []byte(config.AppConfig.JWTRefreshSecret))
+    claims, err := parseToken(refreshToken, []byte(config.AppConfig.JWTRefreshSecret))
+    if err != nil {
+        log.Printf("Error parsing refresh token: %+v\n", err)
+        var validationErr *jwt.ValidationError
+        if errors.As(err, &validationErr){
+            if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
+                return nil, &server_errors.TokenMalformed
+            }else if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
+                return nil, &server_errors.TokenExpired
+            }else if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0{
+                return nil, &server_errors.TokenSignatureInvalid
+            }else{
+                return nil, &server_errors.InternalError
+            }
+        }
+        return nil, &server_errors.InternalError
+    }
+    return claims, nil
 }
 
 func ParseAccessToken(accessToken string) (jwt.MapClaims, error) {
-    return parseToken(accessToken, []byte(config.AppConfig.JWTSecret))
+    claims, err := parseToken(accessToken, []byte(config.AppConfig.JWTSecret))
+    if err != nil {
+        log.Printf("Error parsing refresh token: %+v\n", err)
+        var validationErr *jwt.ValidationError
+        if errors.As(err, &validationErr){
+            if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
+                return nil, &server_errors.TokenMalformed
+            }else if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
+                return nil, &server_errors.TokenExpired
+            }else if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0{
+                return nil, &server_errors.TokenSignatureInvalid
+            }else{
+                return nil, &server_errors.InternalError
+            }
+        }
+        return nil, &server_errors.InternalError
+    }
+    return claims, nil
 }
 
 func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
