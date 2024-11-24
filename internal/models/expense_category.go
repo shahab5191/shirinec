@@ -4,9 +4,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type ExpenseCategory struct{
-    ID      int
-    UserID uuid.UUID
-    Name    string
-    Color   string
+type ExpenseCategory struct {
+	ID     int
+	UserID uuid.UUID
+	Name   *string
+	Color  *string
 }

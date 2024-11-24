@@ -6,7 +6,7 @@ import (
 	"shirinec.com/internal/services"
 )
 
-func (r *router) setupIncomeRouter() {
+func (r *router) setupExpenseRouter() {
     incomeService := services.NewIncomeService(
 		r.Deps.IncomeCategoryRepo,
 	)

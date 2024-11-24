@@ -23,10 +23,12 @@ func main() {
 
     userRepo := repositories.NewUserRepository(database.Pool)
     incomeCategoryRepo := repositories.NewIncomeCategoryRepository(database.Pool)
+    expenseCategoryRepo := repositories.NewExpenseCategoryRepository(database.Pool)
     
     deps := handler.Dependencies{
         UserRepo: userRepo,
         IncomeCategoryRepo: incomeCategoryRepo,
+        ExpenseCategoryRepo: expenseCategoryRepo,
     }
 
     ginEngine := gin.Default()
