@@ -6,6 +6,5 @@ import (
 
 type Dependencies struct {
 	UserRepo            repositories.UserRepository
-	IncomeCategoryRepo  repositories.IncomeCategoryRepository
-	ExpenseCategoryRepo repositories.ExpenseCategoryRepository
+	CategoryRepo  repositories.CategoryRepository
 }

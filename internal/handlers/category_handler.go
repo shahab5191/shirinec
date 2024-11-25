@@ -15,7 +15,7 @@ import (
 	"shirinec.com/internal/utils"
 )
 
-type ExpenseCategoryHandler interface {
+type CategoryHandler interface {
 	Create(c *gin.Context)
 	List(c *gin.Context)
 	GetByID(c *gin.Context)
@@ -23,19 +23,19 @@ type ExpenseCategoryHandler interface {
 	Update(c *gin.Context)
 }
 
-type expenseCategoryHandler struct {
-	expenseCategoryService services.ExpenseCategoryService
+type categoryHandler struct {
+	categoryService services.CategoryService
 }
 
-func NewExpenseCategoryHandler(expenseCategoryService services.ExpenseCategoryService) ExpenseCategoryHandler {
-	return &expenseCategoryHandler{expenseCategoryService: expenseCategoryService}
+func NewCategoryHandler(categoryService services.CategoryService) CategoryHandler {
+	return &categoryHandler{categoryService: categoryService}
 }
 
-func (h *expenseCategoryHandler) Create(c *gin.Context) {
+func (h *categoryHandler) Create(c *gin.Context) {
 
-	var input dto.CreateIncomeCategoryRequest
+	var input dto.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Create - Bind body %+v\n", err)
+		log.Printf("[Error] - categoryHandler.Create - Bind body %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -51,14 +51,17 @@ func (h *expenseCategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var category models.ExpenseCategory
+	var category models.Category
 	category.UserID = userID
 	category.Name = &input.Name
 	category.Color = &input.Color
+    category.IconID = input.IconID
+    category.EntityType = &input.Type
+    log.Printf("Category Object: %+v\n", category)
 
-	err = h.expenseCategoryService.Create(&category)
+	err = h.categoryService.Create(&category)
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Create - Calling repo create %+v\n", err)
+		log.Printf("[Error] - categoryHandler.Create - Calling repo create %+v\n", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -66,10 +69,10 @@ func (h *expenseCategoryHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
-func (h *expenseCategoryHandler) List(c *gin.Context) {
+func (h *categoryHandler) List(c *gin.Context) {
 	var input dto.ListRequest
 	if err := c.ShouldBindQuery(&input); err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.List - Bind query %+v\n", err)
+		log.Printf("[Error] - categoryHandler.List - Bind query %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -80,14 +83,14 @@ func (h *expenseCategoryHandler) List(c *gin.Context) {
 		return
 	}
 
-	categories, err := h.expenseCategoryService.ListCategories(userID, input.Page, input.Size)
+	categories, err := h.categoryService.ListCategories(userID, input.Page, input.Size)
 
 	if err != nil {
 		var sErr *server_errors.SError
 		if errors.As(err, &sErr) {
 			c.JSON(sErr.Unwrap())
 		} else {
-			log.Printf("[Error] - expenseCategoryHandler.List - impossible error: %+v\n", err)
+			log.Printf("[Error] - categoryHandler.List - impossible error: %+v\n", err)
 			c.JSON(server_errors.InternalError.Unwrap())
 		}
 		return
@@ -96,10 +99,10 @@ func (h *expenseCategoryHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, categories)
 }
 
-func (h *expenseCategoryHandler) GetByID(c *gin.Context) {
+func (h *categoryHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.GetByID - Parsing id param: %+v\n", err)
+		log.Printf("[Error] - categoryHandler.GetByID - Parsing id param: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -110,14 +113,14 @@ func (h *expenseCategoryHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	category, err := h.expenseCategoryService.GetByID(userID, int(id))
+	category, err := h.categoryService.GetByID(userID, int(id))
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.GetByID - Getting category from service: %+v\n", err)
+		log.Printf("[Error] - categoryHandler.GetByID - Getting category from service: %+v\n", err)
 		var sErr *server_errors.SError
 		if errors.As(err, &sErr) {
 			c.JSON(sErr.Unwrap())
 		} else {
-			log.Printf("[Error] - expenseCategoryHandler.GetByID - Impossible Error!: %+v\n", err)
+			log.Printf("[Error] - categoryHandler.GetByID - Impossible Error!: %+v\n", err)
 			c.JSON(server_errors.InternalError.Unwrap())
 		}
 		return
@@ -126,10 +129,10 @@ func (h *expenseCategoryHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
-func (h *expenseCategoryHandler) Delete(c *gin.Context) {
+func (h *categoryHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Delete - parsing id param: %+v\n", err)
+		log.Printf("[Error] - categoryHandler.Delete - parsing id param: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -140,14 +143,14 @@ func (h *expenseCategoryHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.expenseCategoryService.Delete(userID, int(id))
+	err = h.categoryService.Delete(userID, int(id))
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Delete - getting category from service: %+v\n", err)
+		log.Printf("[Error] - categoryHandler.Delete - getting category from service: %+v\n", err)
 		var sErr *server_errors.SError
 		if errors.As(err, &sErr) {
 			c.JSON(sErr.Unwrap())
 		} else {
-			log.Printf("[Error] - expenseCategoryHandler.Delete - Impossible Error!: %+v\n", err)
+			log.Printf("[Error] - categoryHandler.Delete - Impossible Error!: %+v\n", err)
 			c.JSON(server_errors.InternalError.Unwrap())
 		}
 		return
@@ -156,17 +159,17 @@ func (h *expenseCategoryHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
-func (h *expenseCategoryHandler) Update(c *gin.Context) {
+func (h *categoryHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Update - parsing id param: %+v\n", err)
+		log.Printf("[Error] - categoryHandler.Update - parsing id param: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
-	var input dto.UpdateIncomeCategoryRequest
+	var input dto.UpdateCategoryRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Create - Bind body %+v\n", err)
+		log.Printf("[Error] - categoryHandler.Update - Bind body %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -182,10 +185,15 @@ func (h *expenseCategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	category, err := h.expenseCategoryService.Update(&userID, id, &input)
+	category, err := h.categoryService.Update(&userID, id, &input)
 	if err != nil {
-		log.Printf("[Error] - expenseCategoryHandler.Create - Calling repo create %+v\n", err)
-		c.JSON(server_errors.InternalError.Unwrap())
+		log.Printf("[Error] - categoryHandler.Update - Calling category service update %+v\n", err)
+        var seError *server_errors.SError
+        if errors.As(err, &seError){
+            c.JSON(seError.Unwrap())
+        }else{
+            c.JSON(server_errors.InternalError.Unwrap())
+        }
 		return
 	}
 

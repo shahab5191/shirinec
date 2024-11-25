@@ -22,13 +22,11 @@ func main() {
     defer database.Close()
 
     userRepo := repositories.NewUserRepository(database.Pool)
-    incomeCategoryRepo := repositories.NewIncomeCategoryRepository(database.Pool)
-    expenseCategoryRepo := repositories.NewExpenseCategoryRepository(database.Pool)
+    categoryRepo := repositories.NewCategoryRepository(database.Pool)
     
     deps := handler.Dependencies{
         UserRepo: userRepo,
-        IncomeCategoryRepo: incomeCategoryRepo,
-        ExpenseCategoryRepo: expenseCategoryRepo,
+        CategoryRepo: categoryRepo,
     }
 
     ginEngine := gin.Default()

@@ -15,32 +15,32 @@ import (
 	"shirinec.com/internal/repositories"
 )
 
-type IncomeCategoryService interface {
-	Create(category *models.IncomeCategory) error
+type CategoryService interface {
+	Create(category *models.Category) error
 	ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error)
-	GetByID(userID uuid.UUID, id int) (*models.IncomeCategory, error)
+	GetByID(userID uuid.UUID, id int) (*models.Category, error)
     Delete(userID uuid.UUID, id int) error
-    Update(userID *uuid.UUID, id int, category *dto.UpdateIncomeCategoryRequest) (*models.IncomeCategory ,error)
+    Update(userID *uuid.UUID, id int, category *dto.UpdateCategoryRequest) (*models.Category ,error)
 }
 
-type incomeCategoryService struct {
-	incomeCategoryRepo repositories.IncomeCategoryRepository
+type categoryService struct {
+	categoryRepo repositories.CategoryRepository
 }
 
-func NewIncomeService(incomeCategoryRepo repositories.IncomeCategoryRepository) IncomeCategoryService {
-	return &incomeCategoryService{incomeCategoryRepo: incomeCategoryRepo}
+func NewCategoryService(categoryRepo repositories.CategoryRepository) CategoryService {
+	return &categoryService{categoryRepo: categoryRepo}
 }
 
-func (s *incomeCategoryService) Create(category *models.IncomeCategory) error {
-	return s.incomeCategoryRepo.Create(context.Background(), category)
+func (s *categoryService) Create(category *models.Category) error {
+	return s.categoryRepo.Create(context.Background(), category)
 }
 
-func (s *incomeCategoryService) ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error) {
+func (s *categoryService) ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error) {
 	var response dto.ListCategoriesResponse
 
 	limit := size
 	offset := page * size
-	categories, totalCount, err := s.incomeCategoryRepo.List(context.Background(), limit, offset, userID)
+	categories, totalCount, err := s.categoryRepo.List(context.Background(), limit, offset, userID)
 	totalPages := int(math.Ceil(float64(totalCount) / float64(size)))
 	remainingPages := int(math.Max(float64(totalPages-page-1), 0))
 
@@ -50,7 +50,7 @@ func (s *incomeCategoryService) ListCategories(userID uuid.UUID, page int, size 
 	response.Pagination.RemainingPages = remainingPages
 
 	if err != nil {
-		log.Printf("[Error] - IncomeCategoryService.List - Getting categories from repository: %+v\n", err)
+		log.Printf("[Error] - CategoryService.List - Getting categories from repository: %+v\n", err)
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
@@ -67,10 +67,10 @@ func (s *incomeCategoryService) ListCategories(userID uuid.UUID, page int, size 
 	return &response, err
 }
 
-func (s *incomeCategoryService) GetByID(userID uuid.UUID, id int) (*models.IncomeCategory, error) {
-	category, err := s.incomeCategoryRepo.GetByID(context.Background(), id, userID)
+func (s *categoryService) GetByID(userID uuid.UUID, id int) (*models.Category, error) {
+	category, err := s.categoryRepo.GetByID(context.Background(), id, userID)
 	if err != nil {
-		log.Printf("[Error] - IncomeCategoryService.GetByID - Getting category from repository: %+v\n", err)
+		log.Printf("[Error] - CategoryService.GetByID - Getting category from repository: %+v\n", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
@@ -84,10 +84,10 @@ func (s *incomeCategoryService) GetByID(userID uuid.UUID, id int) (*models.Incom
 	return category, nil
 }
 
-func (s *incomeCategoryService) Delete(userID uuid.UUID, id int) error {
-	err := s.incomeCategoryRepo.Delete(context.Background(), id, userID)
+func (s *categoryService) Delete(userID uuid.UUID, id int) error {
+	err := s.categoryRepo.Delete(context.Background(), id, userID)
 	if err != nil {
-		log.Printf("[Error] - IncomeCategoryService.GetByID - Getting category from repository: %+v\n", err)
+		log.Printf("[Error] - CategoryService.Delete - Getting category from repository: %+v\n", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return &server_errors.ItemNotFound
 		}
@@ -101,17 +101,22 @@ func (s *incomeCategoryService) Delete(userID uuid.UUID, id int) error {
 	return nil
 }
 
-func (s *incomeCategoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.UpdateIncomeCategoryRequest) (*models.IncomeCategory ,error) {
-    var category models.IncomeCategory
+func (s *categoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.UpdateCategoryRequest) (*models.Category ,error) {
+    var category models.Category
     category.ID = id
     category.UserID = *userID
     category.Color = categoryDTO.Color
     category.Name = categoryDTO.Name
 
-	err := s.incomeCategoryRepo.Update(context.Background(), &category)
+	err := s.categoryRepo.Update(context.Background(), &category)
 	if err != nil {
-		log.Printf("[Error] - IncomeCategoryService.GetByID - Getting category from repository: %+v\n", err)
+		log.Printf("[Error] - CategoryService.Update - Getting category from repository: %+v\n", err)
+        var sError *server_errors.SError
+        if errors.As(err, &sError) {
+            return nil, err
+        }
 		if errors.Is(err, sql.ErrNoRows) {
+            log.Printf("Item was not found!")
 			return &category, &server_errors.ItemNotFound
 		}
 
