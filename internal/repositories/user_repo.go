@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	UpdatePassword(ctx context.Context, newPassword string, id uuid.UUID) error
 	UpdateEmail(ctx context.Context, newEmail string, id uuid.UUID) error
+    Login(ctx context.Context, ip string) error
 }
 
 type userRepository struct {
@@ -43,6 +44,14 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 	user.ProfileID = profileID
 	err = r.db.QueryRow(ctx, query, user.ID, user.Email, user.IP, user.Password, currentTime, user.ProfileID).Scan(&user.ID)
 	return err
+}
+
+func (r *userRepository) Login(ctx context.Context, ip string) error{
+    query := "UPDATE users SET last_login = $1, ip = $2 RETURNING id"
+    var id int
+    currentTime := time.Now().UTC().Truncate(time.Second)
+    err := r.db.QueryRow(ctx, query, currentTime, ip).Scan(id)
+    return err
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {

@@ -49,7 +49,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	loginResponse, err := h.authService.Login(credentials.Email, credentials.Password)
+	loginResponse, err := h.authService.Login(credentials.Email, credentials.Password, c.ClientIP())
 	var se *server_errors.SError
 	if err != nil {
 		if errors.As(err, &se) {

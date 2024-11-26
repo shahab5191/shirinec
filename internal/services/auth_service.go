@@ -19,7 +19,7 @@ import (
 
 type AuthService interface {
 	CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (dto.LoginResponse, error)
-	Login(email, password string) (dto.LoginResponse, error)
+	Login(email, password, ip string) (dto.LoginResponse, error)
 	Refresh(token string) (*dto.LoginResponse, error)
 }
 
@@ -87,7 +87,7 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserReque
 	return response, nil
 }
 
-func (s *authService) Login(email, password string) (dto.LoginResponse, error) {
+func (s *authService) Login(email, password, ip string) (dto.LoginResponse, error) {
 	var res dto.LoginResponse
 	user, err := s.userRepo.GetByEmail(context.Background(), email)
 	if err != nil {
@@ -117,6 +117,8 @@ func (s *authService) Login(email, password string) (dto.LoginResponse, error) {
 		log.Printf("Error generating refresh token: %s", err)
 		return res, &server_errors.InternalError
 	}
+
+    err = s.userRepo.Login(context.Background(), ip)
 
 	response := dto.LoginResponse{
 		ID:           user.ID,
@@ -172,11 +174,11 @@ func (s *authService) Refresh(token string) (*dto.LoginResponse, error) {
 		return nil, &server_errors.InternalError
 	}
 
-    if user.ID != uuID || user.Email != email || user.LastPasswordChange != lastPasswordChange{
-        log.Printf("user.LastpasswordChange: %v\nlastPasswordChange: %v\n", user.LastPasswordChange, lastPasswordChange)
-        log.Printf("id: %b\nemail: %b\nlastPasswordChange: %b", user.ID != uuID, user.Email != email, user.LastPasswordChange != lastPasswordChange)
-        return nil, &server_errors.CredentialError
-    }
+	if user.ID != uuID || user.Email != email || user.LastPasswordChange != lastPasswordChange {
+		log.Printf("user.LastpasswordChange: %v\nlastPasswordChange: %v\n", user.LastPasswordChange, lastPasswordChange)
+		log.Printf("id: %b\nemail: %b\nlastPasswordChange: %b", user.ID != uuID, user.Email != email, user.LastPasswordChange != lastPasswordChange)
+		return nil, &server_errors.CredentialError
+	}
 
 	accessToken, err := utils.GenerateAccessToken(id, email, lastPasswordChange)
 	if err != nil {
