@@ -23,9 +23,11 @@ type RefreshTokenRequest struct {
 }
 
 type UpdatePasswordRequest struct {
-	NewPassword string `json:"newPassword"`
+	NewPassword     string `json:"newPassword"`
+	CurrentPassword string `json:"currentPassword"`
 }
 
 type UpdateEmailRequest struct {
-	NewEmail string `json:"newEmail"`
+	NewEmail        string `json:"newEmail"`
+	CurrentPassword string `json:"currentPassword"`
 }

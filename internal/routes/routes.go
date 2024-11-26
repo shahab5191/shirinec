@@ -9,6 +9,7 @@ type Router interface {
 	SetupRouter()
 	setupCategoryRouter()
 	setupAuthRouter()
+    setupUserRouter()
 }
 
 type router struct {
@@ -26,4 +27,5 @@ func NewRouter(ginEngine *gin.Engine, deps *handler.Dependencies) Router {
 func (r *router) SetupRouter() {
 	r.setupAuthRouter()
 	r.setupCategoryRouter()
+    r.setupUserRouter()
 }

@@ -20,21 +20,21 @@ func HashPassword(password string) (string, error) {
     return string(hashedPassword), nil
 }
 
-func GenerateAccessToken(id, email string) (string, error){
+func GenerateAccessToken(id, email string, lastPasswordChange time.Time) (string, error){
     expirationTime := time.Now().Add(config.AppConfig.AccessTokenDuration)
-    return generateToken(id, email, expirationTime, []byte(config.AppConfig.JWTSecret))
-
+    return generateToken(id, email, lastPasswordChange, expirationTime, []byte(config.AppConfig.JWTSecret))
 }
 
-func GenerateRefreshToken(id, email string) (string, error){
+func GenerateRefreshToken(id, email string, lastPasswordChange time.Time) (string, error){
     expirationTime := time.Now().Add(config.AppConfig.RefreshTokenDuration)
-    return generateToken(id, email, expirationTime, []byte(config.AppConfig.JWTRefreshSecret))
+    return generateToken(id, email, lastPasswordChange, expirationTime, []byte(config.AppConfig.JWTRefreshSecret))
 }
 
-func generateToken(id, email string, exp time.Time, secret []byte) (string, error) {
+func generateToken(id, email string, lastPasswordChange time.Time, exp time.Time, secret []byte) (string, error) {
     claims := jwt.MapClaims{
         "id": id,
         "email": email,
+        "lastPasswordChange": lastPasswordChange.Unix(),
         "exp": exp.Unix(),
     }
 
@@ -77,6 +77,7 @@ func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
     }
 
     if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+        log.Printf("Claims: %+v\n", claims)
         return claims, nil
     }else{
         log.Printf("parsedToken: %+v\n", claims)

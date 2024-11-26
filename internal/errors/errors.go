@@ -34,5 +34,6 @@ var (
 	InvalidAuthorizationHeader = SError{Code: http.StatusUnauthorized, Message: "Invalid authorization format", ErrorCode: 108}
 	Unauthorized               = SError{Code: http.StatusUnauthorized, Message: "You are not authorized", ErrorCode: 109}
 	ItemNotFound               = SError{Code: http.StatusNotFound, Message: "Requested item does not exists!", ErrorCode: 110}
+	UserNotFound               = SError{Code: http.StatusNotFound, Message: "Requested user does not exists!", ErrorCode: 110}
 	EmptyUpdate                = SError{Code: http.StatusNotFound, Message: "No fields to update", ErrorCode: 111}
 )
