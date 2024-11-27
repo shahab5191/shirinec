@@ -16,6 +16,7 @@ type LoginResponse struct {
 	ID           uuid.UUID `json:"id"`
 	AccessToken  string    `json:"accessToken"`
 	RefreshToken string    `json:"refreshToken"`
+    VerificationCode int `json:"verificationCode"`
 }
 
 type RefreshTokenRequest struct {

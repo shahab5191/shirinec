@@ -17,6 +17,7 @@ type UserHandler interface {
 	NewPassword(c *gin.Context)
 	NewEmail(c *gin.Context)
     NewEmailVerification(c *gin.Context)
+    SignupVerification(c *gin.Context)
 }
 
 type userHandler struct {
@@ -110,4 +111,33 @@ func (h *userHandler) NewEmailVerification(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"result": "Email changed successfully"})
 	return
+}
+
+
+func (h *userHandler) SignupVerification(c *gin.Context) {
+    var input dto.VerificationRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		c.JSON(server_errors.InternalError.Unwrap())
+		return
+	}
+
+    err = h.userService.SignupVerification(context.Background(), input.VerificationCode, userID)
+    if err != nil {
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr){
+            c.JSON(sErr.Unwrap())
+            return
+        }
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"result": "User verified successfully"})
+    return
 }

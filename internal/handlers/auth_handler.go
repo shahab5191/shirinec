@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"shirinec.com/internal/dto"
-	server_errors "shirinec.com/internal/errors"
+	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
 )
 
@@ -38,7 +38,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, response)
+	c.JSON(http.StatusCreated, *response)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {

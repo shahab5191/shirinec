@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
+	"shirinec.com/internal/db"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
@@ -18,7 +20,7 @@ import (
 )
 
 type AuthService interface {
-	CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (dto.LoginResponse, error)
+	CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (*dto.LoginResponse, error)
 	Login(email, password, ip string) (dto.LoginResponse, error)
 	Refresh(token string) (*dto.LoginResponse, error)
 }
@@ -32,22 +34,21 @@ func NewAuthService(userRepo repositories.UserRepository, jwtSecret string) Auth
 	return &authService{jwtSecret: jwtSecret, userRepo: userRepo}
 }
 
-func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (dto.LoginResponse, error) {
-	var response dto.LoginResponse
+func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (*dto.LoginResponse, error) {
 	password, err := utils.HashPassword(input.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %+v\n", err)
-		return response, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
 
 	existingUser, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			log.Printf("Error getting user by email! %s\n", err)
-			return response, &server_errors.InternalError
+			return nil, &server_errors.InternalError
 		}
 	} else {
-		return response, &server_errors.UserAlreadyExistsError
+		return nil, &server_errors.UserAlreadyExistsError
 	}
 
 	log.Printf("%+v\n", existingUser)
@@ -62,29 +63,37 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserReque
 	err = s.userRepo.Create(ctx, &user)
 	if err != nil {
 		log.Printf("Error creating user in datbase: %s", err)
-		return response, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
-
-	log.Printf("v+%\n", user)
 
 	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
 		log.Printf("Error generating access token: %s", err)
-		return response, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
 	refreshToken, err := utils.GenerateRefreshToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
 		log.Printf("Error generating refresh token: %s", err)
-		return response, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
 
-	response = dto.LoginResponse{
-		ID:           user.ID,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+	verificationCode := utils.GenerateVerificationCode()
+
+	rKey := fmt.Sprintf("signup:%d", verificationCode)
+	_, err = db.Redis.SetEx(ctx, rKey, user.ID.String(), 5*time.Minute).Result()
+	if err != nil {
+		log.Printf("[Error] - authService.CreateUser - Setting verification code to redis: %+v\n", err)
+		return nil, &server_errors.InternalError
 	}
 
-	return response, nil
+	response := dto.LoginResponse{
+		ID:               user.ID,
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		VerificationCode: verificationCode,
+	}
+
+	return &response, nil
 }
 
 func (s *authService) Login(email, password, ip string) (dto.LoginResponse, error) {
@@ -118,7 +127,7 @@ func (s *authService) Login(email, password, ip string) (dto.LoginResponse, erro
 		return res, &server_errors.InternalError
 	}
 
-    err = s.userRepo.Login(context.Background(), ip)
+	err = s.userRepo.Login(context.Background(), ip)
 
 	response := dto.LoginResponse{
 		ID:           user.ID,

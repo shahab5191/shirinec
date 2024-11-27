@@ -22,6 +22,8 @@ type UserService interface {
 	NewPassword(ctx context.Context, input dto.UpdatePasswordRequest, userID uuid.UUID) error
 	NewEmail(ctx context.Context, input dto.UpdateEmailRequest, userID uuid.UUID) (int, error)
 	NewEmailVerification(ctx context.Context, verificationCode int, userID uuid.UUID) error
+	SignupVerification(ctx context.Context, verificationCode int, userID uuid.UUID) error
+
 }
 
 type userService struct {
@@ -88,7 +90,7 @@ func (s *userService) NewEmail(ctx context.Context, input dto.UpdateEmailRequest
 	_, err = db.Redis.HSet(ctx, rKey, fields).Result()
 	_, err = db.Redis.Expire(ctx, rKey, 5*time.Minute).Result()
 	if err != nil {
-		log.Printf("[Error] - userService.NewEmail - seting verification code to redis: %+v\n", err)
+		log.Printf("[Error] - userService.NewEmail - setting verification code to redis: %+v\n", err)
 		return 0, &server_errors.InternalError
 	}
 	return verificationCode, nil
@@ -108,7 +110,6 @@ func (s *userService) NewEmailVerification(ctx context.Context, verificationCode
 
 	log.Printf("HGetAll res: %+v\n", res)
 	if userID.String() != res["userID"] {
-        log.Printf("userID: %s\nredis userID: %s\n",userID.String(), res["userID"])
 		return &server_errors.InvalidVerificationCode
 	}
 
@@ -124,3 +125,29 @@ func (s *userService) NewEmailVerification(ctx context.Context, verificationCode
 	}
 	return nil
 }
+
+func (s *userService) SignupVerification(ctx context.Context, verificationCode int, userID uuid.UUID) error {
+	rKey := fmt.Sprintf("signup:%d", verificationCode)
+    log.Printf("rKey: %+v\n", rKey)
+
+	res, err := db.Redis.Get(ctx, rKey).Result()
+    log.Printf("res: %+v\n", res)
+	if err != nil {
+		if err == redis.Nil {
+			return &server_errors.InvalidVerificationCode
+		}
+		log.Printf("[Error] - userService.SignupVerification - Getting email change inputs from redis: %+v\n", err)
+		return &server_errors.InternalError
+	}
+
+	if userID.String() != res {
+		return &server_errors.InvalidVerificationCode
+	}
+
+    db.Redis.Del(ctx, rKey)
+
+	err = s.userRepo.VerifyUser(ctx, userID)
+	return err
+}
+
+

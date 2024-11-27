@@ -76,7 +76,7 @@ func AuthMiddleWare(flags AuthMiddleWareFlags, db *pgxpool.Pool) gin.HandlerFunc
                 return
             }
 
-            if user.Status != enums.StatusValidated{
+            if user.Status != enums.StatusVerified{
                 ctx.JSON(server_errors.AccountIsNotActive.Unwrap())
                 ctx.Abort()
                 return

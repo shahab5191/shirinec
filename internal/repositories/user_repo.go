@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"shirinec.com/internal/enums"
 	"shirinec.com/internal/models"
 )
 
@@ -17,6 +18,7 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, newPassword string, id uuid.UUID) error
 	UpdateEmail(ctx context.Context, newEmail string, id uuid.UUID) error
     Login(ctx context.Context, ip string) error
+    VerifyUser(ctx context.Context, userID uuid.UUID) error
 }
 
 type userRepository struct {
@@ -36,13 +38,14 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 		return err
 	}
 	log.Printf("ProfileID: %+v\n", profileID)
-	query := "INSERT INTO users (id, email, ip, password, last_login, profile_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+	query := "INSERT INTO users (id, email, ip, password, last_login, profile_id, last_password_change) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
 	currentTime := time.Now().UTC().Truncate(time.Second)
 	user.LastLogin = currentTime
 	user.CreationDate = currentTime
 	user.UpdateDate = currentTime
 	user.ProfileID = profileID
-	err = r.db.QueryRow(ctx, query, user.ID, user.Email, user.IP, user.Password, currentTime, user.ProfileID).Scan(&user.ID)
+    user.LastPasswordChange = currentTime
+	err = r.db.QueryRow(ctx, query, user.ID, user.Email, user.IP, user.Password, currentTime, user.ProfileID, user.LastPasswordChange).Scan(&user.ID)
 	return err
 }
 
@@ -82,4 +85,11 @@ func (r *userRepository) UpdateEmail(ctx context.Context, newEmail string, id uu
     var uid uuid.UUID
 	err := r.db.QueryRow(ctx, query, newEmail, currentTime, id).Scan(&uid)
 	return err
+}
+
+func (r *userRepository) VerifyUser(ctx context.Context, userID uuid.UUID) error {
+    query := "UPDATE users SET status = $1 WHERE id = $2 RETURNING id"
+    var uid uuid.UUID
+    err := r.db.QueryRow(ctx, query, enums.StatusVerified, userID).Scan(&uid)
+    return err
 }

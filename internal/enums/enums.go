@@ -10,9 +10,9 @@ const (
 type UserStatus string
 
 const (
-	StatusBanned UserStatus = "Banned"
-	StatusValidated UserStatus = "Validated"
+	StatusBanned   UserStatus = "Banned"
+	StatusVerified UserStatus = "Verified"
 	StatusDisabled UserStatus = "Disabled"
-	StatusLocked UserStatus = "Locked"
-	StatusPending UserStatus = "Pending"
+	StatusLocked   UserStatus = "Locked"
+	StatusPending  UserStatus = "Pending"
 )
