@@ -70,14 +70,16 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 
 func (r *userRepository) UpdatePassword(ctx context.Context, newPassword string, id uuid.UUID) error {
     currentTime := time.Now().UTC().Truncate(time.Second)
-	query := "UPDATE users SET password = $1, last_password_change = $2 WHERE id = $3 RETURNING id"
+	query := "UPDATE users SET password = $1, last_password_change = $2, update_date = $2 WHERE id = $3 RETURNING id"
 	var uid uuid.UUID
 	err := r.db.QueryRow(ctx, query, newPassword, currentTime, id).Scan(&uid)
 	return err
 }
 
 func (r *userRepository) UpdateEmail(ctx context.Context, newEmail string, id uuid.UUID) error {
-	query := "UPDATE users SET email = $1 WHERE id = $2"
-	err := r.db.QueryRow(ctx, query, newEmail, id).Scan()
+	query := "UPDATE users SET email = $1, update_date = $2 WHERE id = $4 RETURNING id"
+    currentTime := time.Now().UTC().Truncate(time.Second)
+    var uid uuid.UUID
+	err := r.db.QueryRow(ctx, query, newEmail, currentTime, id).Scan(&uid)
 	return err
 }

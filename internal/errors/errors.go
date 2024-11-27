@@ -36,4 +36,5 @@ var (
 	ItemNotFound               = SError{Code: http.StatusNotFound, Message: "Requested item does not exists!", ErrorCode: 110}
 	UserNotFound               = SError{Code: http.StatusNotFound, Message: "Requested user does not exists!", ErrorCode: 110}
 	EmptyUpdate                = SError{Code: http.StatusNotFound, Message: "No fields to update", ErrorCode: 111}
+	AccountIsNotActive         = SError{Code: http.StatusForbidden, Message: "Requested account is not active", ErrorCode: 111}
 )

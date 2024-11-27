@@ -8,7 +8,10 @@ import (
 
 func (r *router) setupUserRouter() {
 	userService := services.NewUserService(r.Deps.UserRepo)
-    userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService)
 
-    r.GinEngine.POST("/user/new_password", middlewares.AuthMiddleWare(), userHandler.NewPassword)
+	flags := middlewares.AuthMiddleWareFlags{ShouldBeActive: true}
+
+	r.GinEngine.POST("/user/new_password", middlewares.AuthMiddleWare(flags, r.db), userHandler.NewPassword)
+	r.GinEngine.POST("/user/new_email", middlewares.AuthMiddleWare(flags, r.db), userHandler.NewEmail)
 }

@@ -15,6 +15,7 @@ import (
 
 type UserHandler interface {
 	NewPassword(c *gin.Context)
+    NewEmail(c *gin.Context)
 }
 
 type userHandler struct {
@@ -51,4 +52,31 @@ func (h *userHandler) NewPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"result": "Successfully updated the password"})
+}
+
+func (h *userHandler) NewEmail(c *gin.Context) {
+    var input dto.UpdateEmailRequest
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil{
+        c.JSON(server_errors.InternalError.Unwrap())
+    }
+
+    err = h.userService.NewEmail(context.Background(), input, userID)
+    if err != nil {
+        log.Printf("[Error] - userHandler.NewEmail - Calling userService.NewEmail: %+v\n", err)
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr) {
+            c.JSON(sErr.Unwrap())
+        }else {
+            c.JSON(server_errors.InternalError.Unwrap())
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"result": "Successfully updated the email"})
 }

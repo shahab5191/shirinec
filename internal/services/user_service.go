@@ -28,7 +28,7 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 }
 
 func (s *userService) NewPassword(ctx context.Context, input dto.UpdatePasswordRequest, userID uuid.UUID) error {
-	user, err := s.userRepo.GetByID(context.Background(), userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		log.Printf("[Error] - userService.NewPassword - getting user by id: %+v\n", err)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -58,5 +58,24 @@ func (s *userService) NewPassword(ctx context.Context, input dto.UpdatePasswordR
 }
 
 func (s *userService) NewEmail(ctx context.Context, input dto.UpdateEmailRequest, userID uuid.UUID) error {
+    user, err := s.userRepo.GetByID(ctx, userID)
+    if err != nil {
+        log.Printf("[Error] - userService.NewEmail - Getting user from repo %+v\n", err)
+        if errors.Is(err, sql.ErrNoRows) {
+            return &server_errors.UserNotFound
+        }
+        return &server_errors.InternalError
+    }
+
+    if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.CurrentPassword)); err != nil {
+        log.Printf("[Error] - userService.NewEmail - Comparing password with saved hash: %+v\n", err)
+        return &server_errors.CredentialError
+    }
+
+    err = s.userRepo.UpdateEmail(ctx, input.NewEmail, userID)
+    if err != nil{
+        log.Printf("[Error] - userService.NewEmail - Updating email: %+v\n", err)
+        return &server_errors.InternalError
+    }
 	return nil
 }
