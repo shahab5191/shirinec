@@ -34,7 +34,7 @@ func (r *categoryRepository) Create(ctx context.Context, category *models.Catego
 	currentTime := time.Now().UTC()
 	category.CreationDate = &currentTime
 	category.UpdateDate = &currentTime
-	log.Printf("Category: %+v\n", category)
+	log.Printf("Category: %+v\n", *category.EntityType)
 	err := r.db.QueryRow(ctx, query, category.UserID.String(), category.Name, category.Color, category.IconID, category.EntityType).Scan(&category.ID)
 	return err
 }

@@ -5,10 +5,13 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
+	"shirinec.com/internal/enums"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
@@ -56,7 +59,11 @@ func (h *categoryHandler) Create(c *gin.Context) {
 	category.Name = &input.Name
 	category.Color = &input.Color
     category.IconID = input.IconID
-    category.EntityType = &input.Type
+    entityTypeStr := string(input.Type)
+    entityTypeStr = strings.ToLower(entityTypeStr)
+    entityTypeStr = string(unicode.ToUpper(rune(entityTypeStr[0]))) + entityTypeStr[1:]
+    entityType := enums.CategoryType(entityTypeStr)
+    category.EntityType = &entityType
     log.Printf("Category Object: %+v\n", category)
 
 	err = h.categoryService.Create(&category)
