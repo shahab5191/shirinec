@@ -21,13 +21,3 @@ type LoginResponse struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refreshToken"`
 }
-
-type UpdatePasswordRequest struct {
-	NewPassword     string `json:"newPassword"`
-	CurrentPassword string `json:"currentPassword"`
-}
-
-type UpdateEmailRequest struct {
-	NewEmail        string `json:"newEmail"`
-	CurrentPassword string `json:"currentPassword"`
-}

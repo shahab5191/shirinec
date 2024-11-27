@@ -21,6 +21,8 @@ func main() {
 	}
 	defer database.Close()
 
+    db.NewRedis()
+
 	userRepo := repositories.NewUserRepository(database.Pool)
 	categoryRepo := repositories.NewCategoryRepository(database.Pool)
 

@@ -77,7 +77,7 @@ func (r *userRepository) UpdatePassword(ctx context.Context, newPassword string,
 }
 
 func (r *userRepository) UpdateEmail(ctx context.Context, newEmail string, id uuid.UUID) error {
-	query := "UPDATE users SET email = $1, update_date = $2 WHERE id = $4 RETURNING id"
+	query := "UPDATE users SET email = $1, update_date = $2 WHERE id = $3 RETURNING id"
     currentTime := time.Now().UTC().Truncate(time.Second)
     var uid uuid.UUID
 	err := r.db.QueryRow(ctx, query, newEmail, currentTime, id).Scan(&uid)

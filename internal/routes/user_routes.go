@@ -14,4 +14,5 @@ func (r *router) setupUserRouter() {
 
 	r.GinEngine.POST("/user/new_password", middlewares.AuthMiddleWare(flags, r.db), userHandler.NewPassword)
 	r.GinEngine.POST("/user/new_email", middlewares.AuthMiddleWare(flags, r.db), userHandler.NewEmail)
+    r.GinEngine.POST("/user/new_email/verify", middlewares.AuthMiddleWare(flags, r.db), userHandler.NewEmailVerification)
 }
