@@ -23,39 +23,41 @@ type CategoryRepository interface {
 
 type categoryRepository struct {
 	db *pgxpool.Pool
+    tableName string
 }
 
 func NewCategoryRepository(db *pgxpool.Pool) CategoryRepository {
-	return &categoryRepository{db: db}
+	return &categoryRepository{db: db, tableName: "categories"}
 }
 
 func (r *categoryRepository) Create(ctx context.Context, category *models.Category) error {
-	query := "INSERT INTO categories (user_id, name, color, icon_id, entity_type) VALUES ($1, $2, $3, $4, $5) RETURNING id"
-	currentTime := time.Now().UTC()
+	queryFormat := "INSERT INTO %s (user_id, name, color, icon_id, entity_type, update_date, creation_date) VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING id"
+    query := fmt.Sprintf(queryFormat, r.tableName)
+	currentTime := time.Now().UTC().Truncate(time.Second)
 	category.CreationDate = &currentTime
 	category.UpdateDate = &currentTime
-	log.Printf("Category: %+v\n", *category.EntityType)
-	err := r.db.QueryRow(ctx, query, category.UserID.String(), category.Name, category.Color, category.IconID, category.EntityType).Scan(&category.ID)
+	err := r.db.QueryRow(ctx, query, category.UserID.String(), category.Name, category.Color, category.IconID, category.EntityType, currentTime).Scan(&category.ID)
 	return err
 }
 
 func (r *categoryRepository) GetByID(ctx context.Context, ID int, userID uuid.UUID) (*models.Category, error) {
 	var category models.Category
-	query := "SELECT id, user_id, name, color, icon_id, creation_date, update_date FROM categories WHERE user_id = $1 AND id = $2"
-	err := r.db.QueryRow(ctx, query, userID.String(), ID).Scan(&category.ID, &category.UserID, &category.Name, &category.Color, &category.IconID, &category.CreationDate, &category.UpdateDate)
+	queryFormat := "SELECT id, user_id, name, color, icon_id, entity_type, creation_date, update_date FROM %s WHERE user_id = $1 AND id = $2"
+    query := fmt.Sprintf(queryFormat, r.tableName)
+
+	err := r.db.QueryRow(ctx, query, userID.String(), ID).Scan(&category.ID, &category.UserID, &category.Name, &category.Color, &category.IconID, &category.EntityType, &category.CreationDate, &category.UpdateDate)
 	return &category, err
 }
 
 func (r *categoryRepository) List(ctx context.Context, limit int, offset int, userID uuid.UUID) (*[]models.Category, int, error) {
-	countQuery := "SELECT COUNT(*) FROM categories WHERE user_id = $1"
-	var totalCount int
-	err := r.db.QueryRow(ctx, countQuery, userID).Scan(&totalCount)
-	if err != nil {
-		return nil, 0, err
-	}
+    totalCount, err := CountByUserID(ctx, r.db, r.tableName, userID)
+    if err != nil {
+        return nil, 0, err
+    }
 
 	var categories = make([]models.Category, 0, limit)
-	query := "SELECT id, user_id, name, color, icon_id, entity_type, creation_date, update_date FROM categories WHERE user_id = $1 LIMIT $2 OFFSET $3"
+	queryFormat := "SELECT id, user_id, name, color, icon_id, entity_type, creation_date, update_date FROM %s WHERE user_id = $1 LIMIT $2 OFFSET $3"
+    query := fmt.Sprintf(queryFormat, r.tableName)
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 	defer rows.Close()
 
@@ -80,7 +82,8 @@ func (r *categoryRepository) List(ctx context.Context, limit int, offset int, us
 }
 
 func (r *categoryRepository) Delete(ctx context.Context, id int, userID uuid.UUID) error {
-	query := "DELETE FROM categories WHERE id = $1 AND user_id = $2 RETURNING id"
+	queryFormat := "DELETE FROM %s WHERE id = $1 AND user_id = $2 RETURNING id"
+    query := fmt.Sprintf(queryFormat, r.tableName)
 	var deletedID int
 	err := r.db.QueryRow(ctx, query, id, userID).Scan(&deletedID)
 	return err
@@ -119,7 +122,8 @@ func (r *categoryRepository) Update(ctx context.Context, category *models.Catego
 		return &server_errors.EmptyUpdate
 	}
 	query := fmt.Sprintf(
-		"UPDATE categories SET %s WHERE id = '%d' AND user_id = '%s' RETURNING id",
+		"UPDATE %s SET %s WHERE id = '%d' AND user_id = '%s' RETURNING id",
+        r.tableName,
 		strings.Join(setClauses, ", "),
 		category.ID,
 		category.UserID,
