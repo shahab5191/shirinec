@@ -8,13 +8,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"shirinec.com/internal/dto"
 	"shirinec.com/internal/models"
 )
 
 type ItemRepository interface {
 	Create(ctx context.Context, item *models.Item) error
-	GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.Item, error)
-	List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]models.Item, int, error)
+	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
+	List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]dto.ItemJoinedResponse, int, error)
 }
 
 type itemRepository struct {
@@ -37,22 +38,23 @@ func (r *itemRepository) Create(ctx context.Context, item *models.Item) error {
 	return err
 }
 
-func (r *itemRepository) GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.Item, error) {
-	query := "SELECT id, user_id, name, image_id, category_id, creation_date, update_date FROM $1 WHERE id = $2 AND user_id = $3"
-	var item models.Item
-	err := r.db.QueryRow(ctx, query, r.tableName, id, userID).Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.CategoryID, &item.CreationDate, &item.UpdateDate)
+func (r *itemRepository) GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error) {
+	queryFormat := "SELECT i.id, i.user_id, i.name, i.image_id, m.url, m.metadata, c.id, c.name, cm.url as category_icon, c.entity_type, i.creation_date, i.update_date FROM %s i LEFT JOIN categories c ON i.category_id = c.id LEFT JOIN media m ON i.image_id = m.id LEFT JOIN media cm ON c.icon_id = m.id WHERE i.id = $1 AND i.user_id = $2"
+	query := fmt.Sprintf(queryFormat, r.tableName)
+
+	var item dto.ItemJoinedResponse
+	err := r.db.QueryRow(ctx, query, id, userID).Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.ImageURL, &item.ImageMetadata, &item.CategoryID, &item.CategoryName, &item.CategoryIconURL, &item.CategoryType, &item.CreationDate, &item.UpdateDate)
 	return &item, err
 }
 
-func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]models.Item, int, error) {
+func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]dto.ItemJoinedResponse, int, error) {
 	totalCount, err := CountByUserID(ctx, r.db, r.tableName, userID)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var items = make([]models.Item, 0, limit)
-	queryFormat := "SELECT id, user_id, name, image_id, category_id, creation_date, update_date FROM %s WHERE user_id = $1 LIMIT $2 OFFSET $3"
-	query := fmt.Sprintf(queryFormat, r.tableName)
+	var items = make([]dto.ItemJoinedResponse, 0, limit)
+	query := "SELECT i.id, i.user_id, i.name, i.image_id, m.url, m.metadata, c.id, c.name, cm.url as category_icon, c.entity_type, i.creation_date, i.update_date FROM items i LEFT JOIN categories c ON i.category_id = c.id LEFT JOIN media m ON i.image_id = m.id LEFT JOIN media cm ON c.icon_id = m.id WHERE i.user_id = $1 LIMIT $2 OFFSET $3"
 
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 	defer rows.Close()
@@ -62,8 +64,8 @@ func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uui
 	}
 
 	for rows.Next() {
-		var item models.Item
-		err = rows.Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.CategoryID, &item.CreationDate, &item.UpdateDate)
+		var item dto.ItemJoinedResponse
+		err = rows.Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.ImageURL, &item.ImageMetadata, &item.CategoryID, &item.CategoryName, &item.CategoryIconURL, &item.CategoryType, &item.CreationDate, &item.UpdateDate)
 		if err != nil {
 			return nil, 0, err
 		}

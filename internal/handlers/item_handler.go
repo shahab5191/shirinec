@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ import (
 type ItemHandler interface {
 	Create(c *gin.Context)
     List(c *gin.Context)
+    GetByID(c *gin.Context)
 }
 
 type itemHandler struct {
@@ -86,4 +88,33 @@ func (h *itemHandler) List(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, items)
+}
+
+func (h *itemHandler) GetByID(c *gin.Context){
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        log.Printf("[Error] - itemHandler.GetByID - Parsing id param: %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        log.Printf("[Error] - itemHandler.GetByID - Parsing uuid from user_id string: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    item, err := h.itemService.GetByID(context.Background(), id, userID)
+    if err != nil {
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr){
+            c.JSON(sErr.Unwrap())
+            return
+        }
+        log.Printf("[Error] - itemHandler.GetByID - impossible Error!: %+v\n", err)
+        return
+    }
+
+    c.JSON(http.StatusOK, item)
 }

@@ -18,6 +18,7 @@ import (
 type ItemService interface {
 	Create(ctx context.Context, item *dto.ItemCreateRequest, userID uuid.UUID) (*models.Item, error)
     List(ctx context.Context, page, size int, userID uuid.UUID) (*dto.ItemsListResponse, error)
+    GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
 }
 
 type itemService struct {
@@ -75,4 +76,17 @@ func (s *itemService) List(ctx context.Context, page, size int, userID uuid.UUID
 
     response.Items = items
     return &response, nil
+}
+
+func (s *itemService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error){
+    item, err := s.itemRepo.GetByID(ctx, id, userID)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return nil, &server_errors.ItemNotFound
+        }
+        log.Printf("[Error] - itemService.GetByID - Calling itemRepository.GetByID: %+v\n", err)
+        return nil, &server_errors.InternalError
+    }
+
+    return item, nil
 }
