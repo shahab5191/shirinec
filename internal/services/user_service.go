@@ -19,8 +19,8 @@ import (
 )
 
 type UserService interface {
-	NewPassword(ctx context.Context, input dto.UpdatePasswordRequest, userID uuid.UUID) error
-	NewEmail(ctx context.Context, input dto.UpdateEmailRequest, userID uuid.UUID) (int, error)
+	NewPassword(ctx context.Context, input dto.UserUpdatePasswordRequest, userID uuid.UUID) error
+	NewEmail(ctx context.Context, input dto.UserUpdateEmailRequest, userID uuid.UUID) (int, error)
 	NewEmailVerification(ctx context.Context, verificationCode int, userID uuid.UUID) error
 	SignupVerification(ctx context.Context, verificationCode int, userID uuid.UUID) error
 
@@ -34,7 +34,7 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 	return &userService{userRepo: userRepo}
 }
 
-func (s *userService) NewPassword(ctx context.Context, input dto.UpdatePasswordRequest, userID uuid.UUID) error {
+func (s *userService) NewPassword(ctx context.Context, input dto.UserUpdatePasswordRequest, userID uuid.UUID) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		log.Printf("[Error] - userService.NewPassword - getting user by id: %+v\n", err)
@@ -64,7 +64,7 @@ func (s *userService) NewPassword(ctx context.Context, input dto.UpdatePasswordR
 	return nil
 }
 
-func (s *userService) NewEmail(ctx context.Context, input dto.UpdateEmailRequest, userID uuid.UUID) (int, error) {
+func (s *userService) NewEmail(ctx context.Context, input dto.UserUpdateEmailRequest, userID uuid.UUID) (int, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		log.Printf("[Error] - userService.NewEmail - Getting user from repo %+v\n", err)

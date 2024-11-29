@@ -29,7 +29,7 @@ func NewUserHandler(userService services.UserService) UserHandler {
 }
 
 func (h *userHandler) NewPassword(c *gin.Context) {
-	var input dto.UpdatePasswordRequest
+	var input dto.UserUpdatePasswordRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
@@ -57,7 +57,7 @@ func (h *userHandler) NewPassword(c *gin.Context) {
 }
 
 func (h *userHandler) NewEmail(c *gin.Context) {
-	var input dto.UpdateEmailRequest
+	var input dto.UserUpdateEmailRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
@@ -84,7 +84,7 @@ func (h *userHandler) NewEmail(c *gin.Context) {
 }
 
 func (h *userHandler) NewEmailVerification(c *gin.Context) {
-	var input dto.VerificationRequest
+	var input dto.UserVerificationRequest
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
         log.Printf("Verification error: %+v\n", err)
@@ -115,7 +115,7 @@ func (h *userHandler) NewEmailVerification(c *gin.Context) {
 
 
 func (h *userHandler) SignupVerification(c *gin.Context) {
-    var input dto.VerificationRequest
+    var input dto.UserVerificationRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return

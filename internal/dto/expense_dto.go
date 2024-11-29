@@ -2,7 +2,7 @@ package dto
 
 import "shirinec.com/internal/models"
 
-type ListExpenseCategoriesResponse struct {
+type ExpenseCategoriesListResponse struct {
 	Pagination PaginationData    `json:"pagination"`
 	Categories []models.Category `json:"categories"`
 }

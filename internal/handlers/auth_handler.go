@@ -21,7 +21,7 @@ func NewAuthHandler(authService services.AuthService) *AuthHandler {
 }
 
 func (h *AuthHandler) SignUp(c *gin.Context) {
-	var input dto.CreateUserRequest
+	var input dto.AuthSignupRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
@@ -42,7 +42,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
-	var credentials dto.LoginRequest
+	var credentials dto.AuthLoginRequest
 	if err := c.ShouldBindJSON(&credentials); err != nil {
 		log.Printf("ERROR: %s", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials format!"})
@@ -65,7 +65,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-    var requestDTO dto.RefreshTokenRequest
+    var requestDTO dto.AuthRefreshTokenRequest
     if err := c.ShouldBindJSON(&requestDTO); err != nil {
         log.Printf("Error binding request to dto: %+v\n", err)
         c.JSON(server_errors.InvalidInput.Unwrap())

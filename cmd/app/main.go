@@ -21,20 +21,25 @@ func main() {
 	}
 	defer database.Close()
 
-    db.NewRedis()
+	db.NewRedis()
 
 	userRepo := repositories.NewUserRepository(database.Pool)
 	categoryRepo := repositories.NewCategoryRepository(database.Pool)
+	itemRepo := repositories.NewItemRepository(database.Pool)
 
 	deps := handler.Dependencies{
 		UserRepo:     userRepo,
 		CategoryRepo: categoryRepo,
+		ItemRepo:     itemRepo,
 	}
 
 	ginEngine := gin.Default()
 	router := routes.NewRouter(ginEngine, &deps, database.Pool)
 	router.SetupRouter()
 
+    for _, route := range ginEngine.Routes() {
+        log.Println(route.Method, route.Path)
+    }
 	port := strconv.Itoa(config.AppConfig.Port)
 	log.Printf("Starting %s in %s mode on port %s", config.AppConfig.AppName, config.AppConfig.Env, port)
 

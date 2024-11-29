@@ -20,9 +20,9 @@ import (
 )
 
 type AuthService interface {
-	CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (*dto.LoginResponse, error)
-	Login(email, password, ip string) (dto.LoginResponse, error)
-	Refresh(token string) (*dto.LoginResponse, error)
+	CreateUser(ctx context.Context, input *dto.AuthSignupRequest, ip string) (*dto.AuthLoginResponse, error)
+	Login(email, password, ip string) (dto.AuthLoginResponse, error)
+	Refresh(token string) (*dto.AuthLoginResponse, error)
 }
 
 type authService struct {
@@ -34,7 +34,7 @@ func NewAuthService(userRepo repositories.UserRepository, jwtSecret string) Auth
 	return &authService{jwtSecret: jwtSecret, userRepo: userRepo}
 }
 
-func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserRequest, ip string) (*dto.LoginResponse, error) {
+func (s *authService) CreateUser(ctx context.Context, input *dto.AuthSignupRequest, ip string) (*dto.AuthLoginResponse, error) {
 	password, err := utils.HashPassword(input.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %+v\n", err)
@@ -86,7 +86,7 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserReque
 		return nil, &server_errors.InternalError
 	}
 
-	response := dto.LoginResponse{
+	response := dto.AuthLoginResponse{
 		ID:               user.ID,
 		AccessToken:      accessToken,
 		RefreshToken:     refreshToken,
@@ -96,8 +96,8 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.CreateUserReque
 	return &response, nil
 }
 
-func (s *authService) Login(email, password, ip string) (dto.LoginResponse, error) {
-	var res dto.LoginResponse
+func (s *authService) Login(email, password, ip string) (dto.AuthLoginResponse, error) {
+	var res dto.AuthLoginResponse
 	user, err := s.userRepo.GetByEmail(context.Background(), email)
 	if err != nil {
 		log.Printf("Error getting user by email from db: %s", err)
@@ -129,7 +129,7 @@ func (s *authService) Login(email, password, ip string) (dto.LoginResponse, erro
 
 	err = s.userRepo.Login(context.Background(), ip)
 
-	response := dto.LoginResponse{
+	response := dto.AuthLoginResponse{
 		ID:           user.ID,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -138,7 +138,7 @@ func (s *authService) Login(email, password, ip string) (dto.LoginResponse, erro
 	return response, nil
 }
 
-func (s *authService) Refresh(token string) (*dto.LoginResponse, error) {
+func (s *authService) Refresh(token string) (*dto.AuthLoginResponse, error) {
 	claims, err := utils.ParseRefreshToken(token)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (s *authService) Refresh(token string) (*dto.LoginResponse, error) {
 		log.Printf("[Error] - Refresh - Error parsing id from string to uuid: %+v\n", err)
 	}
 
-	loginResponse := dto.LoginResponse{ID: uid, AccessToken: accessToken, RefreshToken: token}
+	loginResponse := dto.AuthLoginResponse{ID: uid, AccessToken: accessToken, RefreshToken: token}
 
 	return &loginResponse, nil
 }

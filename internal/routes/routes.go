@@ -11,6 +11,7 @@ type Router interface {
 	setupCategoryRouter()
 	setupAuthRouter()
 	setupUserRouter()
+    setupItemRouter()
 }
 
 type router struct {
@@ -31,4 +32,5 @@ func (r *router) SetupRouter() {
 	r.setupAuthRouter()
 	r.setupCategoryRouter()
 	r.setupUserRouter()
+    r.setupItemRouter()
 }

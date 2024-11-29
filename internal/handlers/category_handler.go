@@ -36,7 +36,7 @@ func NewCategoryHandler(categoryService services.CategoryService) CategoryHandle
 
 func (h *categoryHandler) Create(c *gin.Context) {
 
-	var input dto.CreateCategoryRequest
+	var input dto.CategoryCreateRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("[Error] - categoryHandler.Create - Bind body %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
@@ -96,10 +96,9 @@ func (h *categoryHandler) List(c *gin.Context) {
 		var sErr *server_errors.SError
 		if errors.As(err, &sErr) {
 			c.JSON(sErr.Unwrap())
-		} else {
-			log.Printf("[Error] - categoryHandler.List - impossible error: %+v\n", err)
-			c.JSON(server_errors.InternalError.Unwrap())
 		}
+        log.Printf("[Error] - categoryHandler.List - impossible error: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
@@ -174,7 +173,7 @@ func (h *categoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var input dto.UpdateCategoryRequest
+	var input dto.CategoryUpdateRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		log.Printf("[Error] - categoryHandler.Update - Bind body %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())

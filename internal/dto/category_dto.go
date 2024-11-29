@@ -5,19 +5,19 @@ import (
 	"shirinec.com/internal/models"
 )
 
-type ListCategoriesResponse struct {
+type CategoriesListResponse struct {
 	Pagination PaginationData    `json:"pagination"`
 	Categories []models.Category `json:"categories"`
 }
 
-type CreateCategoryRequest struct {
+type CategoryCreateRequest struct {
 	Name   string             `json:"name,required"`
 	Color  string             `json:"color,required"`
 	IconID *int               `json:"iconID"`
 	Type   enums.CategoryType `json:"type,required"`
 }
 
-type UpdateCategoryRequest struct {
+type CategoryUpdateRequest struct {
 	Name   *string `json:"name"`
 	Color  *string `json:"color"`
 	IconID *int    `json:"iconID"`

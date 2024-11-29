@@ -95,6 +95,7 @@ func (r *categoryRepository) Update(ctx context.Context, category *models.Catego
 	var args []interface{}
 	argIndex := 1
 
+
 	if category.Name != nil {
 		setClauses = append(setClauses, fmt.Sprintf("name = $%d", argIndex))
 		args = append(args, *category.Name)

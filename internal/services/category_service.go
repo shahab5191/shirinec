@@ -17,10 +17,10 @@ import (
 
 type CategoryService interface {
 	Create(category *models.Category) error
-	ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error)
+	ListCategories(userID uuid.UUID, page int, size int) (*dto.CategoriesListResponse, error)
 	GetByID(userID uuid.UUID, id int) (*models.Category, error)
     Delete(userID uuid.UUID, id int) error
-    Update(userID *uuid.UUID, id int, category *dto.UpdateCategoryRequest) (*models.Category ,error)
+    Update(userID *uuid.UUID, id int, category *dto.CategoryUpdateRequest) (*models.Category ,error)
 }
 
 type categoryService struct {
@@ -35,8 +35,8 @@ func (s *categoryService) Create(category *models.Category) error {
 	return s.categoryRepo.Create(context.Background(), category)
 }
 
-func (s *categoryService) ListCategories(userID uuid.UUID, page int, size int) (*dto.ListCategoriesResponse, error) {
-	var response dto.ListCategoriesResponse
+func (s *categoryService) ListCategories(userID uuid.UUID, page int, size int) (*dto.CategoriesListResponse, error) {
+	var response dto.CategoriesListResponse
 
 	limit := size
 	offset := page * size
@@ -101,7 +101,7 @@ func (s *categoryService) Delete(userID uuid.UUID, id int) error {
 	return nil
 }
 
-func (s *categoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.UpdateCategoryRequest) (*models.Category ,error) {
+func (s *categoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.CategoryUpdateRequest) (*models.Category ,error) {
     var category models.Category
     category.ID = id
     category.UserID = *userID

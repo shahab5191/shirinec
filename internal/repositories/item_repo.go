@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,13 +13,13 @@ import (
 
 type ItemRepository interface {
 	Create(ctx context.Context, item *models.Item) error
-    GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.Item, error)
-    List(ctx context.Context, userID uuid.UUID, limit, offset int) (*[]models.Item, int, error)
+	GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.Item, error)
+	List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]models.Item, int, error)
 }
 
 type itemRepository struct {
-	db *pgxpool.Pool
-    tableName string
+	db        *pgxpool.Pool
+	tableName string
 }
 
 func NewItemRepository(db *pgxpool.Pool) ItemRepository {
@@ -25,44 +27,82 @@ func NewItemRepository(db *pgxpool.Pool) ItemRepository {
 }
 
 func (r *itemRepository) Create(ctx context.Context, item *models.Item) error {
-    query := "INSERT INTO $1 (user_id, name, image_id, category_id) VALUES ($2, $3, $4, $5) RETURNING id"
-    // We do not rely on postgres default time because it works with nano seconds but we want second percision
-    currentTime := time.Now().UTC().Truncate(time.Second)
-    item.CreationDate = currentTime
-    item.UpdateDate = currentTime
-    err := r.db.QueryRow(ctx, query, r.tableName, item.UserID, item.Name, item.ImageID, item.CategoryID).Scan(&item.ID)
-    return err
+	queryFormat := "INSERT INTO %s (user_id, name, image_id, category_id) VALUES ($1, $2, $3, $4) RETURNING id"
+	query := fmt.Sprintf(queryFormat, r.tableName)
+	// We do not rely on postgres default time because it works with nano seconds but we want second percision
+	currentTime := time.Now().UTC().Truncate(time.Second)
+	item.CreationDate = currentTime
+	item.UpdateDate = currentTime
+	err := r.db.QueryRow(ctx, query, item.UserID, item.Name, item.ImageID, item.CategoryID).Scan(&item.ID)
+	return err
 }
 
 func (r *itemRepository) GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.Item, error) {
-    query := "SELECT id, user_id, name, image_id, category_id, creation_date, update_date FROM $1 WHERE id = $2 AND user_id = $3"
-    var item models.Item
-    err := r.db.QueryRow(ctx, query, r.tableName, id, userID).Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.CategoryID, &item.CreationDate, &item.UpdateDate)
-    return &item, err
+	query := "SELECT id, user_id, name, image_id, category_id, creation_date, update_date FROM $1 WHERE id = $2 AND user_id = $3"
+	var item models.Item
+	err := r.db.QueryRow(ctx, query, r.tableName, id, userID).Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.CategoryID, &item.CreationDate, &item.UpdateDate)
+	return &item, err
 }
 
-func (r *itemRepository) List(ctx context.Context, userID uuid.UUID, limit, offset int) (*[]models.Item, int, error) {
-    totalCount, err := CountByUserID(ctx, r.db, r.tableName, userID)
-    if err != nil {
-        return nil, 0, err
-    }
+func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]models.Item, int, error) {
+	totalCount, err := CountByUserID(ctx, r.db, r.tableName, userID)
+	if err != nil {
+		return nil, 0, err
+	}
 
-    var items = make([]models.Item, 0, limit)
-    query := "SELECT id, user_id, name, image_id, category_id, creation_date, update_date FROM items WHERE user_id = $1 LIMIT = $2 OFFSET = $3"
-    rows, err := r.db.Query(ctx, query, userID, limit, offset)
-    defer rows.Close()
+	var items = make([]models.Item, 0, limit)
+	queryFormat := "SELECT id, user_id, name, image_id, category_id, creation_date, update_date FROM %s WHERE user_id = $1 LIMIT $2 OFFSET $3"
+	query := fmt.Sprintf(queryFormat, r.tableName)
 
-    if err != nil {
-        return nil, 0, err
-    }
+	rows, err := r.db.Query(ctx, query, userID, limit, offset)
+	defer rows.Close()
 
-    for rows.Next(){
-        var item models.Item
-        err = rows.Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.CategoryID, &item.CreationDate, &item.UpdateDate)
-        if err != nil {
-            return nil, 0, err
-        }
-        items = append(items, item)
-    }
-    return &items, totalCount, nil
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for rows.Next() {
+		var item models.Item
+		err = rows.Scan(&item.ID, &item.UserID, &item.Name, &item.ImageID, &item.CategoryID, &item.CreationDate, &item.UpdateDate)
+		if err != nil {
+			return nil, 0, err
+		}
+		items = append(items, item)
+	}
+	return &items, totalCount, nil
+}
+
+func (r *itemRepository) Update(ctx context.Context, item *models.Item) error {
+	var setClauses []string
+	var args []interface{}
+	argIndex := 1
+
+	if item.Name != nil {
+		setClauses = append(setClauses, fmt.Sprintf("name = $%d", argIndex))
+		args = append(args, item.Name)
+		argIndex++
+	}
+
+	if item.CategoryID != nil {
+		setClauses = append(setClauses, fmt.Sprintf("category_id = $%d", argIndex))
+		args = append(args, item.CategoryID)
+		argIndex++
+	}
+
+	if item.ImageID != nil {
+		setClauses = append(setClauses, fmt.Sprintf("image_id = $%d", argIndex))
+		args = append(args, item.ImageID)
+		argIndex++
+	}
+
+	query := fmt.Sprintf(
+		"UPDATE %s SET (%s) WHERE id = '%d' AND user_id = '%s' RETURNING id",
+		r.tableName,
+		strings.Join(setClauses, ", "),
+		item.ID,
+		item.UserID,
+	)
+
+	err := r.db.QueryRow(ctx, query, args...).Scan(&item.ID)
+	return err
 }

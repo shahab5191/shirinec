@@ -10,8 +10,8 @@ import (
 type Item struct {
     ID int
     UserID uuid.UUID
-    Name string
-    CategoryID int
+    Name *string
+    CategoryID *int
     ImageID *int
     CreationDate time.Time
     UpdateDate time.Time

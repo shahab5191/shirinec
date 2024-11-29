@@ -6,3 +6,7 @@ type PaginationData struct {
 	TotalRecord    int `json:"totalRecord"`
 	RemainingPages int `json:"remainingPages"`
 }
+
+type CreateResponse[T any] struct {
+	Result T `json:"result"`
+}
