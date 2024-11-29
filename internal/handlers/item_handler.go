@@ -20,6 +20,7 @@ type ItemHandler interface {
     List(c *gin.Context)
     GetByID(c *gin.Context)
     Update(c *gin.Context)
+    Delete(c *gin.Context)
 }
 
 type itemHandler struct {
@@ -118,6 +119,36 @@ func (h *itemHandler) GetByID(c *gin.Context){
     }
 
     c.JSON(http.StatusOK, item)
+}
+
+func (h *itemHandler) Delete(c *gin.Context) {
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        log.Printf("[Error] - itemHandler.Delete - Parsing id from context: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        log.Printf("[Error] - itemHandler.Delete - Parsing uuid from user_id string: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    err = h.itemService.Delete(context.Background(), id, userID)
+    if err != nil {
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr) {
+            c.JSON(sErr.Unwrap())
+            return
+        }
+        log.Printf("[Error] - itemService.Delete - Impossible error: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"result": "Item deleted successfully!"})
 }
 
 func (h *itemHandler) Update(c *gin.Context) {

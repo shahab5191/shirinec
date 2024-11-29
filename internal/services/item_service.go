@@ -21,6 +21,7 @@ type ItemService interface {
     List(ctx context.Context, page, size int, userID uuid.UUID) (*dto.ItemsListResponse, error)
     GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
     Update(ctx context.Context, input *dto.ItemUpdateRequest, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
+    Delete(ctx context.Context, id int, userID uuid.UUID) error
 }
 
 type itemService struct {
@@ -91,6 +92,19 @@ func (s *itemService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*d
     }
 
     return item, nil
+}
+
+func (s *itemService) Delete(ctx context.Context, id int, userID uuid.UUID) error{
+    err := s.itemRepo.Delete(ctx, id, userID)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows){
+            return &server_errors.ItemNotFound
+        }
+        log.Printf("[Error] - itemService.Delete - Calling itemRepo.Delete: %+v\n", err)
+        return &server_errors.InternalError
+    }
+
+    return nil
 }
 
 func (s *itemService) Update(ctx context.Context, input *dto.ItemUpdateRequest, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error) {

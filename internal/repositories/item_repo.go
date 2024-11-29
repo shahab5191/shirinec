@@ -18,6 +18,7 @@ type ItemRepository interface {
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
 	List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]dto.ItemJoinedResponse, int, error)
     Update(ctx context.Context, item *models.Item) (*dto.ItemJoinedResponse, error)
+    Delete(ctx context.Context, id int, userID uuid.UUID) error
 }
 
 type itemRepository struct {
@@ -76,6 +77,14 @@ func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uui
 	return &items, totalCount, nil
 }
 
+func (r *itemRepository) Delete(ctx context.Context, id int, userID uuid.UUID) error {
+    queryFormat := "DELETE FROM %s WHERE id = $1 AND user_id = $2 RETURNING id"
+    query := fmt.Sprintf(queryFormat, r.tableName)
+    var deletedID int
+    err := r.db.QueryRow(ctx, query, id, userID).Scan(&deletedID)
+    return err
+}
+
 func (r *itemRepository) Update(ctx context.Context, item *models.Item) (*dto.ItemJoinedResponse, error) {
 	var setClauses []string
 	var args []interface{}
@@ -104,7 +113,8 @@ func (r *itemRepository) Update(ctx context.Context, item *models.Item) (*dto.It
     }
 
 	query := fmt.Sprintf(
-		"UPDATE items SET %s WHERE id = %d AND user_id = '%s' RETURNING id",
+		"UPDATE %s SET %s WHERE id = %d AND user_id = '%s' RETURNING id",
+        r.tableName,
 		strings.Join(setClauses, ", "),
 		item.ID,
 		item.UserID.String(),

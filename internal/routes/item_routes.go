@@ -23,4 +23,5 @@ func (r *router) setupItemRouter() {
 	r.GinEngine.GET("/item", authMiddleware, itemHandler.List)
 	r.GinEngine.GET("/item/:id", authMiddleware, itemHandler.GetByID)
     r.GinEngine.PUT("/item/:id", authMiddleware, itemHandler.Update)
+    r.GinEngine.DELETE("/item/:id", authMiddleware, itemHandler.Delete)
 }
