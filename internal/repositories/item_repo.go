@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/dto"
+	server_errors "shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 )
 
@@ -16,6 +17,7 @@ type ItemRepository interface {
 	Create(ctx context.Context, item *models.Item) error
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
 	List(ctx context.Context, limit, offset int, userID uuid.UUID) (*[]dto.ItemJoinedResponse, int, error)
+    Update(ctx context.Context, item *models.Item) (*dto.ItemJoinedResponse, error)
 }
 
 type itemRepository struct {
@@ -74,7 +76,7 @@ func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uui
 	return &items, totalCount, nil
 }
 
-func (r *itemRepository) Update(ctx context.Context, item *models.Item) error {
+func (r *itemRepository) Update(ctx context.Context, item *models.Item) (*dto.ItemJoinedResponse, error) {
 	var setClauses []string
 	var args []interface{}
 	argIndex := 1
@@ -97,14 +99,23 @@ func (r *itemRepository) Update(ctx context.Context, item *models.Item) error {
 		argIndex++
 	}
 
+    if len(setClauses) == 0 {
+        return nil, &server_errors.EmptyUpdate
+    }
+
 	query := fmt.Sprintf(
-		"UPDATE %s SET (%s) WHERE id = '%d' AND user_id = '%s' RETURNING id",
-		r.tableName,
+		"UPDATE items SET %s WHERE id = %d AND user_id = '%s' RETURNING id",
 		strings.Join(setClauses, ", "),
 		item.ID,
-		item.UserID,
+		item.UserID.String(),
 	)
 
 	err := r.db.QueryRow(ctx, query, args...).Scan(&item.ID)
-	return err
+    if err != nil {
+        return nil, err
+    }
+
+    itemJoined, err := r.GetByID(ctx, item.ID, item.UserID)
+
+	return itemJoined, err
 }

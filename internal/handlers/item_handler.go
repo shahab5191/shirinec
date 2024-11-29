@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
-	server_errors "shirinec.com/internal/errors"
+	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
 )
@@ -19,6 +19,7 @@ type ItemHandler interface {
 	Create(c *gin.Context)
     List(c *gin.Context)
     GetByID(c *gin.Context)
+    Update(c *gin.Context)
 }
 
 type itemHandler struct {
@@ -113,6 +114,41 @@ func (h *itemHandler) GetByID(c *gin.Context){
             return
         }
         log.Printf("[Error] - itemHandler.GetByID - impossible Error!: %+v\n", err)
+        return
+    }
+
+    c.JSON(http.StatusOK, item)
+}
+
+func (h *itemHandler) Update(c *gin.Context) {
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        log.Printf("[Error] - itemHandler.Update - Parsing id from param: %+v\n", err)
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    userID, err := uuid.Parse(c.GetString("user_id"))
+    if err != nil {
+        log.Printf("[Error] - itemHandler.Update - Parsing uuid from user_id string: %+v\n", err)
+        c.JSON(server_errors.InternalError.Unwrap())
+        return
+    }
+
+    var input dto.ItemUpdateRequest
+    if err = c.ShouldBindJSON(&input); err != nil {
+        c.JSON(server_errors.InvalidInput.Unwrap())
+        return
+    }
+
+    item, err := h.itemService.Update(context.Background(), &input, id, userID)
+    if err != nil {
+        var sErr *server_errors.SError
+        if errors.As(err, &sErr){
+            c.JSON(err.(*server_errors.SError).Unwrap())
+            return
+        }
+        c.JSON(server_errors.InternalError.Unwrap())
         return
     }
 

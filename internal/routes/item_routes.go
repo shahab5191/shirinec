@@ -17,7 +17,10 @@ func (r *router) setupItemRouter() {
 		ShouldBeActive: true,
 	}
 
-	r.GinEngine.POST("/item", middlewares.AuthMiddleWare(flags, r.db), itemHandler.Create)
-	r.GinEngine.GET("/item", middlewares.AuthMiddleWare(flags, r.db), itemHandler.List)
-	r.GinEngine.GET("/item/:id", middlewares.AuthMiddleWare(flags, r.db), itemHandler.GetByID)
+    authMiddleware := middlewares.AuthMiddleWare(flags, r.db)
+
+	r.GinEngine.POST("/item", authMiddleware, itemHandler.Create)
+	r.GinEngine.GET("/item", authMiddleware, itemHandler.List)
+	r.GinEngine.GET("/item/:id", authMiddleware, itemHandler.GetByID)
+    r.GinEngine.PUT("/item/:id", authMiddleware, itemHandler.Update)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
+	"shirinec.com/internal/db"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
@@ -19,6 +20,7 @@ type ItemService interface {
 	Create(ctx context.Context, item *dto.ItemCreateRequest, userID uuid.UUID) (*models.Item, error)
     List(ctx context.Context, page, size int, userID uuid.UUID) (*dto.ItemsListResponse, error)
     GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
+    Update(ctx context.Context, input *dto.ItemUpdateRequest, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error)
 }
 
 type itemService struct {
@@ -89,4 +91,30 @@ func (s *itemService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*d
     }
 
     return item, nil
+}
+
+func (s *itemService) Update(ctx context.Context, input *dto.ItemUpdateRequest, id int, userID uuid.UUID) (*dto.ItemJoinedResponse, error) {
+    var item models.Item
+    item.ID = id
+    item.UserID = userID
+    item.Name = input.Name
+    item.ImageID = input.ImageID
+    item.CategoryID = input.CategoryID
+    
+    itemJoined, err := s.itemRepo.Update(ctx, &item)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return nil, &server_errors.ItemNotFound
+        }
+        var pgErr *pgconn.PgError
+        if errors.As(err, &pgErr){
+            if pgErr.Code == db.ForeignKeyViolation{
+                return nil, &server_errors.InvalidInput
+            }
+        }
+        log.Printf("[Error] - itemService.Update - Calling itemRepo.Update: %+v\n", err)
+        return nil, &server_errors.InternalError
+    }
+
+    return itemJoined, nil
 }
