@@ -5,6 +5,7 @@ type CategoryType string
 const (
 	Income  CategoryType = "Income"
 	Expense CategoryType = "Expense"
+    Account CategoryType = "Account"
 )
 
 type UserStatus string
