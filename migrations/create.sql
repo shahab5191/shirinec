@@ -143,7 +143,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION check_account_category()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM categories
+        WHERE id = NEW.category_id
+            AND entity_type = 'Account'
+    ) THEN
+        RAISE EXCEPTION 'Invalid category_id: must reference a category with entity_type Account';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER validate_item_category
 BEFORE INSERT OR UPDATE ON items
 FOR EACH ROW
 EXECUTE FUNCTION check_item_category();
+
+CREATE TRIGGER validate_item_category
+BEFORE INSERT OR UPDATE ON accounts
+FOR EACH ROW
+EXECUTE FUNCTION check_account_category();

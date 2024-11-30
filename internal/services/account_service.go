@@ -72,6 +72,9 @@ func (s *accountService) List(ctx context.Context, page, size int, userID uuid.U
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
+            if pgErr.Code == db.PGExceptionDefault {
+                return nil, &server_errors.InvalidInput
+            }
 		}
 
 		return nil, &server_errors.InternalError
@@ -124,7 +127,9 @@ func (s *accountService) Update(ctx context.Context, input *dto.AccountUpdateReq
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == db.ForeignKeyViolation {
 				return nil, &server_errors.InvalidInput
-			}
+			}else if pgErr.Code == db.PGExceptionDefault{
+                return nil, &server_errors.InvalidInput
+            }
 		}
 		log.Printf("[Error] - accountService.Update - Calling accountRepo.Update: %+v\n", err)
 		return nil, &server_errors.InternalError
