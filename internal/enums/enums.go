@@ -21,7 +21,7 @@ const (
 type MediaUploadBind string
 
 const (
-	BindToItem     MediaUploadBind = "Item"
-	BindToProfile  MediaUploadBind = "Profile"
-	BindToCategory MediaUploadBind = "Category"
+	BindToItem     MediaUploadBind = "item"
+	BindToProfile  MediaUploadBind = "profile"
+	BindToCategory MediaUploadBind = "category"
 )

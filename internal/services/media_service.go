@@ -42,34 +42,34 @@ func (s *mediaService) Create(ctx context.Context, input *dto.MediaUploadRequest
 	media.CreationDate = currentTime
 	media.UpdateDate = currentTime
 	url := fmt.Sprintf("/file/%s-%s", input.BindsTo, uuid.New().String())
-    media.Url = url
+	media.Url = url
 
-    var err error
+	var err error
 	switch input.BindsTo {
 	case enums.BindToItem:
-        err = s.mediaRepo.CreateForItem(ctx, &media, input.BindID)
+		err = s.mediaRepo.CreateForEntity(ctx, "items", "image_id", &media, input.BindID)
 	case enums.BindToCategory:
-        return nil, &server_errors.InternalError
+		err = s.mediaRepo.CreateForEntity(ctx, "categories", "icon_id", &media, input.BindID)
 	case enums.BindToProfile:
-		return nil, &server_errors.InternalError
+		err = s.mediaRepo.CreateForProfile(ctx, &media)
 	}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
-        
-        log.Printf("[Error] - mediaService.Create - Calling mediaRepo.CreateFor: %+v\n", err)
+
+		log.Printf("[Error] - mediaService.Create - Calling mediaRepo.CreateFor%s: %+v\n", input.BindsTo, err)
 		return nil, &server_errors.InternalError
 	}
 
-    var mediaResponse *dto.MediaUploadResponse = &dto.MediaUploadResponse{
-        ID: media.ID,
-        URL: media.Url,
-        Metadata: media.Metadata,
-        UpdateDate: media.UpdateDate,
-        CreationDate: media.CreationDate,
-    }
-    
+	var mediaResponse *dto.MediaUploadResponse = &dto.MediaUploadResponse{
+		ID:           media.ID,
+		URL:          media.Url,
+		Metadata:     media.Metadata,
+		UpdateDate:   media.UpdateDate,
+		CreationDate: media.CreationDate,
+	}
+
 	return mediaResponse, nil
 }
