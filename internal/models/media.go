@@ -7,10 +7,11 @@ import (
 )
 
 type Media struct {
-    ID int
-    url string
-    user_id uuid.UUID
-    metadata *string
-    CreationDate time.Time
-    UpdateDate time.Time
+	ID           int
+	UserID       uuid.UUID
+	Url          string
+	FilePath     string
+	Metadata     *string
+	CreationDate time.Time
+	UpdateDate   time.Time
 }

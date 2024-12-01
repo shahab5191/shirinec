@@ -22,6 +22,8 @@ type Config struct {
 	AccessTokenDuration  time.Duration
 	RefreshTokenDuration time.Duration
 	RedisURL             string
+	UploadFolder         string
+	SqlFolder            string
 }
 
 var AppConfig *Config
@@ -43,6 +45,8 @@ func Load() {
 	viper.SetDefault("Timeout", 5*time.Second)
 	viper.SetDefault("AccessTokenRefresh", 15*time.Minute)
 	viper.SetDefault("RefreshTokenDuration", 168*time.Hour)
+	viper.SetDefault("UploadFolder", "./upload")
+	viper.SetDefault("SqlFolder", "./internal/db/sql")
 
 	viper.AutomaticEnv()
 
@@ -62,6 +66,8 @@ func Load() {
 		AccessTokenDuration:  viper.GetDuration("services.auth.access_token_duration"),
 		RefreshTokenDuration: viper.GetDuration("services.auth.refresh_token_duration"),
 		RedisURL:             getEnvOrDefault("REDIS_URL", ""),
+		UploadFolder:         viper.GetString("server.upload_folder"),
+		SqlFolder:            viper.GetString("server.sql_folder"),
 	}
 	println(viper.GetInt("database.pool_size"))
 
@@ -75,9 +81,9 @@ func Load() {
 		log.Fatal("JWT_SECRET is required but not set")
 	}
 
-    if AppConfig.RedisURL == "" {
-        log.Fatal("REDIS_URL is required but not set")
-    }
+	if AppConfig.RedisURL == "" {
+		log.Fatal("REDIS_URL is required but not set")
+	}
 
 	log.Printf("Config loaded: %+v", AppConfig)
 }

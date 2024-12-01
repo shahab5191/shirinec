@@ -13,6 +13,7 @@ type Router interface {
 	setupUserRouter()
     setupItemRouter()
     setupAccountRouter()
+    setupMediaRouter()
 }
 
 type router struct {
@@ -35,4 +36,5 @@ func (r *router) SetupRouter() {
 	r.setupUserRouter()
     r.setupItemRouter()
     r.setupAccountRouter()
+    r.setupMediaRouter()
 }

@@ -38,4 +38,6 @@ var (
 	EmptyUpdate                = SError{Code: http.StatusNotFound, Message: "No fields to update", ErrorCode: 112}
 	AccountIsNotActive         = SError{Code: http.StatusForbidden, Message: "Requested account is not active", ErrorCode: 113}
 	InvalidVerificationCode    = SError{Code: http.StatusBadRequest, Message: "Invalid verification code!", ErrorCode: 114}
+	FileRequired               = SError{Code: http.StatusBadRequest, Message: "File is required", ErrorCode: 115}
+	InvalidFileFormat          = SError{Code: http.StatusBadRequest, Message: "Only .png, .jpg and .jpeg files are allowed", ErrorCode: 116}
 )

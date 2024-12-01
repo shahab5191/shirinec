@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"shirinec.com/config"
 	"shirinec.com/internal/db"
@@ -27,12 +26,14 @@ func main() {
 	categoryRepo := repositories.NewCategoryRepository(database.Pool)
 	itemRepo := repositories.NewItemRepository(database.Pool)
 	accountRepo := repositories.NewAccountRepository(database.Pool)
+	mediaRepo := repositories.NewMediaRepository(database.Pool)
 
 	deps := handler.Dependencies{
 		UserRepo:     userRepo,
 		CategoryRepo: categoryRepo,
 		ItemRepo:     itemRepo,
 		AccountRepo:  accountRepo,
+		MediaRepo:    mediaRepo,
 	}
 
 	ginEngine := gin.Default()

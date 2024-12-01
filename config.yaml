@@ -2,6 +2,8 @@ server:
   port: 5500
   host: localhost
   env: development
+  upload_folder: ./upload
+  sql_folder: ./internal/db/sql
 database:
   timeout: 5s
   pool_size: 10

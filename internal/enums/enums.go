@@ -5,7 +5,7 @@ type CategoryType string
 const (
 	Income  CategoryType = "Income"
 	Expense CategoryType = "Expense"
-    Account CategoryType = "Account"
+	Account CategoryType = "Account"
 )
 
 type UserStatus string
@@ -16,4 +16,12 @@ const (
 	StatusDisabled UserStatus = "Disabled"
 	StatusLocked   UserStatus = "Locked"
 	StatusPending  UserStatus = "Pending"
+)
+
+type MediaUploadBind string
+
+const (
+	BindToItem     MediaUploadBind = "Item"
+	BindToProfile  MediaUploadBind = "Profile"
+	BindToCategory MediaUploadBind = "Category"
 )
