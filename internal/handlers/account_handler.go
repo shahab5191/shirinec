@@ -96,8 +96,7 @@ func (h *accountHandler) List(c *gin.Context) {
 
 	items, err := h.accountService.List(context.Background(), input.Page, input.Size, userID)
 	if err != nil {
-		var sErr server_errors.SError
-		if errors.As(err, sErr) {
+        if sErr, ok := err.(*server_errors.SError); ok {
 			c.JSON(sErr.Unwrap())
 		}
 		log.Printf("[Error] - accountHandler.List - impossible error: %+v\n", err)

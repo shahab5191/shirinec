@@ -60,11 +60,10 @@ func (r *itemRepository) List(ctx context.Context, limit, offset int, userID uui
 	query := "SELECT i.id, i.user_id, i.name, i.image_id, m.url, m.metadata, c.id, c.name, cm.url as category_icon, c.entity_type, i.creation_date, i.update_date FROM items i LEFT JOIN categories c ON i.category_id = c.id LEFT JOIN media m ON i.image_id = m.id LEFT JOIN media cm ON c.icon_id = m.id WHERE i.user_id = $1 LIMIT $2 OFFSET $3"
 
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
-	defer rows.Close()
-
 	if err != nil {
 		return nil, 0, err
 	}
+    defer rows.Close()
 
 	for rows.Next() {
 		var item dto.ItemJoinedResponse
@@ -105,7 +104,6 @@ func (r *itemRepository) Update(ctx context.Context, item *models.Item) (*dto.It
 	if item.ImageID != nil {
 		setClauses = append(setClauses, fmt.Sprintf("image_id = $%d", argIndex))
 		args = append(args, item.ImageID)
-		argIndex++
 	}
 
     if len(setClauses) == 0 {

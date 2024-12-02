@@ -110,7 +110,6 @@ func (h *userHandler) NewEmailVerification(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"result": "Email changed successfully"})
-	return
 }
 
 
@@ -139,5 +138,4 @@ func (h *userHandler) SignupVerification(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"result": "User verified successfully"})
-    return
 }

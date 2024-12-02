@@ -60,11 +60,11 @@ func (r *accountRepository) List(ctx context.Context, limit, offset int, userID 
     query := fmt.Sprintf(queryFormat, r.tableName)
 
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
-	defer rows.Close()
 
 	if err != nil {
 		return nil, 0, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var item dto.AccountJoinedResponse
@@ -105,7 +105,6 @@ func (r *accountRepository) Update(ctx context.Context, account *models.Account)
     if account.Balance != nil {
         setClauses = append(setClauses, fmt.Sprintf("balance = $%d", argIndex))
         args = append(args, account.Balance)
-        argIndex++
     }
 
 	if len(setClauses) == 0 {

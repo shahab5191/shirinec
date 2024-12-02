@@ -71,7 +71,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, loginResponse)
-	return
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
@@ -97,5 +96,4 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response)
-	return
 }

@@ -45,7 +45,11 @@ func (r *mediaRepository) CreateForEntity(ctx context.Context, entityTableName s
 		log.Printf("[Error] - mediaRepository - Begining Transaction: %+v\n", err)
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != sql.ErrTxDone {
+			log.Printf("tx.Rollback failed: %v", err)
+		}
+	}()
 
 	err = tx.QueryRow(ctx, query, &media.Url, &media.FilePath, &media.UserID, &media.Metadata, &media.CreationDate, &media.UpdateDate).Scan(&media.ID)
 	if err != nil {
@@ -77,7 +81,11 @@ func (r *mediaRepository) CreateForProfile(ctx context.Context, media *models.Me
 		log.Printf("[Error] - mediaRepository - Begining Transaction: %+v\n", err)
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != sql.ErrTxDone {
+			log.Printf("tx.Rollback failed: %v", err)
+		}
+	}()
 
 	err = tx.QueryRow(ctx, query, &media.Url, &media.FilePath, &media.UserID, &media.Metadata, &media.CreationDate, &media.UpdateDate).Scan(&media.ID)
 	if err != nil {

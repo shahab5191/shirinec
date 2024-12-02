@@ -53,7 +53,7 @@ func (r *userRepository) Login(ctx context.Context, ip string) error{
     query := "UPDATE users SET last_login = $1, ip = $2 RETURNING id"
     var id int
     currentTime := time.Now().UTC().Truncate(time.Second)
-    err := r.db.QueryRow(ctx, query, currentTime, ip).Scan(id)
+    err := r.db.QueryRow(ctx, query, &currentTime, &ip).Scan(&id)
     return err
 }
 

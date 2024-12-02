@@ -80,8 +80,7 @@ func (h *itemHandler) List(c *gin.Context) {
 
     items, err := h.itemService.List(context.Background(), input.Page, input.Size, userID)
     if err != nil {
-        var sErr server_errors.SError
-        if errors.As(err, sErr) {
+        if sErr, ok := err.(*server_errors.SError); ok {
             c.JSON(sErr.Unwrap())
         }
         log.Printf("[Error] - itemHandler.List - impossible error: %+v\n", err)

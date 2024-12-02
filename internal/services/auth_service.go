@@ -21,7 +21,7 @@ import (
 
 type AuthService interface {
 	CreateUser(ctx context.Context, input *dto.AuthSignupRequest, ip string) (*dto.AuthLoginResponse, error)
-	Login(email, password, ip string) (dto.AuthLoginResponse, error)
+	Login(email, password, ip string) (*dto.AuthLoginResponse, error)
 	Refresh(token string) (*dto.AuthLoginResponse, error)
 }
 
@@ -96,38 +96,43 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.AuthSignupReque
 	return &response, nil
 }
 
-func (s *authService) Login(email, password, ip string) (dto.AuthLoginResponse, error) {
+func (s *authService) Login(email, password, ip string) (*dto.AuthLoginResponse, error) {
 	var res dto.AuthLoginResponse
 	user, err := s.userRepo.GetByEmail(context.Background(), email)
 	if err != nil {
 		log.Printf("Error getting user by email from db: %s", err)
-		return res, &server_errors.CredentialError
+		return &res, &server_errors.CredentialError
 	}
 
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		log.Printf("Error hashing password: %s", err)
-		return res, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		log.Printf("Password is not correct")
 		log.Printf("Provided pass: %s\nDatabase pass: %s\n", hashedPassword, user.Password)
-		return res, &server_errors.CredentialError
+		return nil, &server_errors.CredentialError
 	}
 
 	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
 		log.Printf("Error generating access token: %s", err)
-		return res, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
 	refreshToken, err := utils.GenerateRefreshToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
 		log.Printf("Error generating refresh token: %s", err)
-		return res, &server_errors.InternalError
+		return nil, &server_errors.InternalError
 	}
 
 	err = s.userRepo.Login(context.Background(), ip)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows){
+            return nil, &server_errors.UserNotFound
+        }
+    }
 
 	response := dto.AuthLoginResponse{
 		ID:           user.ID,
@@ -135,7 +140,7 @@ func (s *authService) Login(email, password, ip string) (dto.AuthLoginResponse, 
 		RefreshToken: refreshToken,
 	}
 
-	return response, nil
+	return &response, nil
 }
 
 func (s *authService) Refresh(token string) (*dto.AuthLoginResponse, error) {
@@ -184,8 +189,6 @@ func (s *authService) Refresh(token string) (*dto.AuthLoginResponse, error) {
 	}
 
 	if user.ID != uuID || user.Email != email || user.LastPasswordChange != lastPasswordChange {
-		log.Printf("user.LastpasswordChange: %v\nlastPasswordChange: %v\n", user.LastPasswordChange, lastPasswordChange)
-		log.Printf("id: %b\nemail: %b\nlastPasswordChange: %b", user.ID != uuID, user.Email != email, user.LastPasswordChange != lastPasswordChange)
 		return nil, &server_errors.CredentialError
 	}
 

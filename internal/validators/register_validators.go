@@ -1,11 +1,22 @@
 package validators
 
 import (
+	"log"
+
 	"github.com/go-playground/validator/v10"
 )
 
 func RegisterValidators(validatorObject *validator.Validate) {
-    validatorObject.RegisterValidation("mediaUploadBind", mediaUploadBindValidator)
-    validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
-    validatorObject.RegisterValidation("alphaNumericSpace", alphaNumericSpaceValidator)
+	err := validatorObject.RegisterValidation("mediaUploadBind", mediaUploadBindValidator)
+	if err != nil {
+		log.Fatalf("[Panic] - RegisterValidators - registering mediaUploadBind")
+	}
+	err = validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
+	if err != nil {
+		log.Fatalf("[Panic] - RegisterValidators - registering categoryCreateType")
+	}
+	err = validatorObject.RegisterValidation("alphaNumericSpace", alphaNumericSpaceValidator)
+	if err != nil {
+		log.Fatalf("[Panic] - RegisterValidators - registering alphaNumericSpace")
+	}
 }

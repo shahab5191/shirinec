@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"shirinec.com/config"
 	"shirinec.com/internal/dto"
@@ -39,17 +38,6 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 
 	var input dto.MediaUploadRequest
 	if err = c.ShouldBindQuery(&input); err != nil {
-		var validationErr validator.ValidationErrors
-		if errors.As(err, &validationErr) {
-			var errList []string
-			for _, err := range validationErr {
-				if err.Tag() == "mediaUploadBind" {
-					errList = append(errList, "binds_to should be 'item', 'category' or 'profile'")
-				} else {
-					errList = append(errList, err.Error())
-				}
-			}
-		}
         log.Printf("[Error] - mediaHandler.Upload - Binding input to dto.MediaUploadRequest: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
