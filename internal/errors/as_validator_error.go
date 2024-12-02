@@ -17,7 +17,7 @@ func AsValidatorError(err error) *[]string {
             for _, err := range validationErr {
                 switch err.Tag() {
                 case "email":
-                    errList = append(errList, "Email is not in correct format")
+                    errList = append(errList, fmt.Sprintf("%s is not in correct format", err.Field()))
                 case "min":
                     length, _ := strconv.Atoi(err.Param())
                     errList = append(

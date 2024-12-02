@@ -36,23 +36,14 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 		return
 	}
 
-	if err := h.validate.Struct(&input); err != nil {
-		var errList []string
-		for _, err := range err.(validator.ValidationErrors) {
-			errList = append(errList, err.Error())
-		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": errList})
-		return
-	}
-
 	response, err := h.authService.CreateUser(context.Background(), &input, c.ClientIP())
 	if err != nil {
 		if errors.Is(err, &server_errors.UserAlreadyExistsError) {
-			c.JSON(server_errors.UserAlreadyExistsError.Code, server_errors.UserAlreadyExistsError.Message)
+			c.JSON(server_errors.UserAlreadyExistsError.Unwrap())
 			return
 		}
-		log.Printf("Error Creating user: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user!"})
+		log.Printf("[Error] - AuthHandler.SignUp - Calling authService.CreateUser: %+v", err)
+		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
@@ -67,7 +58,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			return
 		}
 		log.Printf("[Error] - AuthHandler.Login - binding input to dto.AuthLoginRequest: %s", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials format!"})
+		c.JSON(server_errors.CredentialError.Unwrap())
 		return
 	}
 
@@ -89,9 +80,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var requestDTO dto.AuthRefreshTokenRequest
 	if err := c.ShouldBindJSON(&requestDTO); err != nil {
-        if errList := server_errors.AsValidatorError(err); errList != nil {
+		if errList := server_errors.AsValidatorError(err); errList != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
-            return
+			return
 		}
 		log.Printf("[Error] - AuthHandler.RefreshToken - binding request to dto: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
