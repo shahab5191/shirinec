@@ -44,7 +44,7 @@ func (h *categoryHandler) Create(c *gin.Context) {
 	var input dto.CategoryCreateRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
 		log.Printf("[Error] - categoryHandler.Create - Bind body %+v\n", err)
@@ -88,6 +88,10 @@ func (h *categoryHandler) Create(c *gin.Context) {
 func (h *categoryHandler) List(c *gin.Context) {
 	var input dto.ListRequest
 	if err := c.ShouldBindQuery(&input); err != nil {
+        if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
+		}
 		log.Printf("[Error] - categoryHandler.List - Bind query %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
@@ -185,7 +189,7 @@ func (h *categoryHandler) Update(c *gin.Context) {
 	var input dto.CategoryUpdateRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
 		log.Printf("[Error] - categoryHandler.Update - Bind body %+v\n", err)

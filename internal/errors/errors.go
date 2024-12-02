@@ -3,6 +3,9 @@ package server_errors
 import (
 	"net/http"
 	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 type SError struct {
@@ -15,8 +18,8 @@ func (e *SError) Error() string {
 	return e.Message
 }
 
-func (e *SError) Unwrap() (int, map[string]string) {
-	return e.Code, map[string]string{
+func (e *SError) Unwrap() (int, gin.H) {
+	return e.Code, gin.H{
 		"error": e.Message,
 		"code":  strconv.Itoa(e.ErrorCode),
 	}
@@ -41,3 +44,12 @@ var (
 	FileRequired               = SError{Code: http.StatusBadRequest, Message: "File is required", ErrorCode: 115}
 	InvalidFileFormat          = SError{Code: http.StatusBadRequest, Message: "Only .png, .jpg and .jpeg files are allowed", ErrorCode: 116}
 )
+
+func ValidationErrorBuilder(errList *[]string) *SError {
+    message := strings.Join(*errList, "\n")
+    return &SError{
+        Code: http.StatusBadRequest,
+        Message: message,
+        ErrorCode: 117,
+    }
+}

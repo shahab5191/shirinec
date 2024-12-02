@@ -26,7 +26,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	var input dto.AuthSignupRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
 		c.JSON(server_errors.InvalidInput.Unwrap())
@@ -51,7 +51,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var credentials dto.AuthLoginRequest
 	if err := c.ShouldBindJSON(&credentials); err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
 		log.Printf("[Error] - AuthHandler.Login - binding input to dto.AuthLoginRequest: %s", err)
@@ -77,7 +77,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var requestDTO dto.AuthRefreshTokenRequest
 	if err := c.ShouldBindJSON(&requestDTO); err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
 		log.Printf("[Error] - AuthHandler.RefreshToken - binding request to dto: %+v\n", err)

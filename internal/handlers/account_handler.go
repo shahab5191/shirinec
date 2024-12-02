@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
@@ -39,8 +38,8 @@ func (h *accountHandler) Create(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
-            return
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
 		}
 		log.Printf("[Info] - accountHandler.Create - Binding user input to dto.ItemCreateRequest: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
@@ -73,13 +72,8 @@ func (h *accountHandler) Create(c *gin.Context) {
 func (h *accountHandler) List(c *gin.Context) {
 	var input dto.ListRequest
 	if err := c.ShouldBindQuery(&input); err != nil {
-		var validationErr validator.ValidationErrors
-		if errors.As(err, &validationErr) {
-			var errList []string
-			for _, err := range validationErr {
-				errList = append(errList, err.Error())
-			}
-			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+		if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
 		log.Printf("[Error] - accountHandler.List - Binding input query to dto.ListRequest: %+v\n", err)
@@ -96,7 +90,7 @@ func (h *accountHandler) List(c *gin.Context) {
 
 	items, err := h.accountService.List(context.Background(), input.Page, input.Size, userID)
 	if err != nil {
-        if sErr, ok := err.(*server_errors.SError); ok {
+		if sErr, ok := err.(*server_errors.SError); ok {
 			c.JSON(sErr.Unwrap())
 		}
 		log.Printf("[Error] - accountHandler.List - impossible error: %+v\n", err)
@@ -183,6 +177,10 @@ func (h *accountHandler) Update(c *gin.Context) {
 
 	var input dto.AccountUpdateRequest
 	if err = c.ShouldBindJSON(&input); err != nil {
+		if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
+		}
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
