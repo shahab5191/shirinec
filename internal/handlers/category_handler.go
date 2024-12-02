@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/enums"
@@ -28,10 +29,14 @@ type CategoryHandler interface {
 
 type categoryHandler struct {
 	categoryService services.CategoryService
+	validate        *validator.Validate
 }
 
-func NewCategoryHandler(categoryService services.CategoryService) CategoryHandler {
-	return &categoryHandler{categoryService: categoryService}
+func NewCategoryHandler(categoryService services.CategoryService, validate *validator.Validate) CategoryHandler {
+	return &categoryHandler{
+		categoryService: categoryService,
+		validate:        validate,
+	}
 }
 
 func (h *categoryHandler) Create(c *gin.Context) {
@@ -41,6 +46,20 @@ func (h *categoryHandler) Create(c *gin.Context) {
 		log.Printf("[Error] - categoryHandler.Create - Bind body %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
+	}
+
+	if err := h.validate.Struct(input); err != nil {
+		var errList []string
+		for _, err := range err.(validator.ValidationErrors) {
+			if err.Tag() == "categoryCreateType" {
+				errList = append(errList, "type should be 'income', 'expense' or 'account'")
+			} else {
+				errList = append(errList, err.Error())
+			}
+		}
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+        return
 	}
 
 	if !utils.IsValidHexColor(input.Color) {
@@ -58,13 +77,13 @@ func (h *categoryHandler) Create(c *gin.Context) {
 	category.UserID = userID
 	category.Name = &input.Name
 	category.Color = &input.Color
-    category.IconID = input.IconID
-    entityTypeStr := string(input.Type)
-    entityTypeStr = strings.ToLower(entityTypeStr)
-    entityTypeStr = string(unicode.ToUpper(rune(entityTypeStr[0]))) + entityTypeStr[1:]
-    entityType := enums.CategoryType(entityTypeStr)
-    category.EntityType = &entityType
-    log.Printf("Category Object: %+v\n", category)
+	category.IconID = input.IconID
+	entityTypeStr := string(input.Type)
+	entityTypeStr = strings.ToLower(entityTypeStr)
+	entityTypeStr = string(unicode.ToUpper(rune(entityTypeStr[0]))) + entityTypeStr[1:]
+	entityType := enums.CategoryType(entityTypeStr)
+	category.EntityType = &entityType
+	log.Printf("Category Object: %+v\n", category)
 
 	err = h.categoryService.Create(&category)
 	if err != nil {
@@ -97,8 +116,8 @@ func (h *categoryHandler) List(c *gin.Context) {
 		if errors.As(err, &sErr) {
 			c.JSON(sErr.Unwrap())
 		}
-        log.Printf("[Error] - categoryHandler.List - impossible error: %+v\n", err)
-        c.JSON(server_errors.InternalError.Unwrap())
+		log.Printf("[Error] - categoryHandler.List - impossible error: %+v\n", err)
+		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
@@ -194,12 +213,12 @@ func (h *categoryHandler) Update(c *gin.Context) {
 	category, err := h.categoryService.Update(&userID, id, &input)
 	if err != nil {
 		log.Printf("[Error] - categoryHandler.Update - Calling category service update %+v\n", err)
-        var seError *server_errors.SError
-        if errors.As(err, &seError){
-            c.JSON(seError.Unwrap())
-        }else{
-            c.JSON(server_errors.InternalError.Unwrap())
-        }
+		var seError *server_errors.SError
+		if errors.As(err, &seError) {
+			c.JSON(seError.Unwrap())
+		} else {
+			c.JSON(server_errors.InternalError.Unwrap())
+		}
 		return
 	}
 

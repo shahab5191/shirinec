@@ -11,10 +11,10 @@ type CategoriesListResponse struct {
 }
 
 type CategoryCreateRequest struct {
-	Name   string             `json:"name,required"`
-	Color  string             `json:"color,required"`
-	IconID *int               `json:"iconID"`
-	Type   enums.CategoryType `json:"type,required"`
+	Name   string             `json:"name,required" validate:"required,alphanum"`
+	Color  string             `json:"color,required" validate:"required,hexcolor"`
+	IconID *int               `json:"iconID" validate:"omitempty,number"`
+	Type   enums.CategoryType `json:"type,required" validate:"required,categoryCreateType"`
 }
 
 type CategoryUpdateRequest struct {

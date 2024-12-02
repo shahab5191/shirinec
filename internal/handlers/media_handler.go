@@ -47,7 +47,6 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 	if err := h.validate.Struct(input); err != nil {
         var errList []string
         for _, err := range err.(validator.ValidationErrors) {
-            log.Println(err.Tag())
             if err.Tag() == "mediaUploadBind"{
                 errList = append(errList, "binds_to should be 'item', 'category' or 'profile'")
             }else{
