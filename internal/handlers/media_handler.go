@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"shirinec.com/config"
 	"shirinec.com/internal/dto"
@@ -23,11 +22,10 @@ type MediaHandler interface {
 
 type mediaHandler struct {
 	mediaService services.MediaService
-	validate     *validator.Validate
 }
 
-func NewMediaHandler(mediaService services.MediaService, validate *validator.Validate) MediaHandler {
-	return &mediaHandler{mediaService: mediaService, validate: validate}
+func NewMediaHandler(mediaService services.MediaService) MediaHandler {
+	return &mediaHandler{mediaService: mediaService}
 }
 
 func (h *mediaHandler) Upload(c *gin.Context) {
@@ -40,22 +38,12 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 
 	var input dto.MediaUploadRequest
 	if err = c.ShouldBindQuery(&input); err != nil {
+        if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
+		}
+        log.Printf("[Warning] - mediaHandler.Upload - Undefined error while binding input to dto.MediaUploadRequest: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
-		return
-	}
-
-	if err := h.validate.Struct(input); err != nil {
-        var errList []string
-        for _, err := range err.(validator.ValidationErrors) {
-            log.Println(err.Tag())
-            if err.Tag() == "mediaUploadBind"{
-                errList = append(errList, "binds_to should be 'item', 'category' or 'profile'")
-            }else{
-                errList = append(errList, err.Error())
-            }
-        }
-
-        c.JSON(http.StatusBadRequest, gin.H{"errors": errList})
 		return
 	}
 

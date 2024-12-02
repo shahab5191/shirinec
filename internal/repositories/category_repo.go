@@ -59,11 +59,11 @@ func (r *categoryRepository) List(ctx context.Context, limit int, offset int, us
 	queryFormat := "SELECT id, user_id, name, color, icon_id, entity_type, creation_date, update_date FROM %s WHERE user_id = $1 LIMIT $2 OFFSET $3"
     query := fmt.Sprintf(queryFormat, r.tableName)
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
-	defer rows.Close()
 
 	if err != nil {
 		return &categories, totalCount, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var category models.Category
@@ -116,7 +116,6 @@ func (r *categoryRepository) Update(ctx context.Context, category *models.Catego
 
 	setClauses = append(setClauses, fmt.Sprintf("update_date = $%d", argIndex))
 	args = append(args, time.Now().UTC())
-	argIndex++
 
 	if len(setClauses) == 0 {
         log.Printf("No update provided!: %+v\n", setClauses)

@@ -8,9 +8,9 @@ import (
 )
 
 type ItemCreateRequest struct {
-	Name       string `json:"name"`
-	ImageID    *int   `json:"imageID"`
-	CategoryID int    `json:"categoryID"`
+	Name       string `json:"name" binding:"required,alphaNumericSpace"`
+	ImageID    *int   `json:"imageID" binding:"omitempty,number"`
+	CategoryID int    `json:"categoryID" binding:"number"`
 }
 
 type ItemJoinedResponse struct {
@@ -34,7 +34,7 @@ type ItemsListResponse struct {
 }
 
 type ItemUpdateRequest struct {
-	Name       *string `json:"name"`
-	CategoryID *int    `json:"categoryID"`
-	ImageID    *int    `json:"imageID"`
+    Name       *string `json:"name" binding:"omitempty,alphaNumericSpace"`
+    CategoryID *int    `json:"categoryID" bining:"omitEmpty,number"`
+    ImageID    *int    `json:"imageID" binding:"omitempty,number"`
 }

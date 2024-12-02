@@ -17,12 +17,18 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(authService services.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+	return &AuthHandler{
+		authService: authService,
+	}
 }
 
 func (h *AuthHandler) SignUp(c *gin.Context) {
 	var input dto.AuthSignupRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
+		if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
+		}
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -30,11 +36,11 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	response, err := h.authService.CreateUser(context.Background(), &input, c.ClientIP())
 	if err != nil {
 		if errors.Is(err, &server_errors.UserAlreadyExistsError) {
-			c.JSON(server_errors.UserAlreadyExistsError.Code, server_errors.UserAlreadyExistsError.Message)
-            return
+			c.JSON(server_errors.UserAlreadyExistsError.Unwrap())
+			return
 		}
-		log.Printf("Error Creating user: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user!"})
+		log.Printf("[Error] - AuthHandler.SignUp - Calling authService.CreateUser: %+v", err)
+		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
@@ -44,8 +50,12 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var credentials dto.AuthLoginRequest
 	if err := c.ShouldBindJSON(&credentials); err != nil {
-		log.Printf("ERROR: %s", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid credentials format!"})
+		if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
+		}
+		log.Printf("[Error] - AuthHandler.Login - binding input to dto.AuthLoginRequest: %s", err)
+		c.JSON(server_errors.CredentialError.Unwrap())
 		return
 	}
 
@@ -61,27 +71,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, loginResponse)
-	return
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-    var requestDTO dto.AuthRefreshTokenRequest
-    if err := c.ShouldBindJSON(&requestDTO); err != nil {
-        log.Printf("Error binding request to dto: %+v\n", err)
-        c.JSON(server_errors.InvalidInput.Unwrap())
-        return
-    }
+	var requestDTO dto.AuthRefreshTokenRequest
+	if err := c.ShouldBindJSON(&requestDTO); err != nil {
+		if errList := server_errors.AsValidatorError(err); errList != nil {
+			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
+			return
+		}
+		log.Printf("[Error] - AuthHandler.RefreshToken - binding request to dto: %+v\n", err)
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
 
-    response, err := h.authService.Refresh(requestDTO.RefreshToken)
-    if err != nil {
-        var serverError *server_errors.SError
-        if errors.As(err, &serverError){
-            c.JSON(serverError.Unwrap())
-            return
-        }
-        c.JSON(server_errors.InternalError.Unwrap())
-        return
-    }
-    c.JSON(http.StatusOK, response)
-    return
+	response, err := h.authService.Refresh(requestDTO.RefreshToken)
+	if err != nil {
+		var serverError *server_errors.SError
+		if errors.As(err, &serverError) {
+			c.JSON(serverError.Unwrap())
+			return
+		}
+		c.JSON(server_errors.InternalError.Unwrap())
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }

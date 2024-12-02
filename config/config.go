@@ -51,7 +51,7 @@ func Load() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal("No config file found: %v", err)
+		log.Fatalf("No config file found: %s", err)
 	}
 
 	AppConfig = &Config{

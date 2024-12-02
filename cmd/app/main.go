@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"shirinec.com/config"
 	"shirinec.com/internal/db"
@@ -31,8 +32,9 @@ func main() {
 	accountRepo := repositories.NewAccountRepository(database.Pool)
 	mediaRepo := repositories.NewMediaRepository(database.Pool)
 
-	validatorObj := validator.New()
-	validators.RegisterValidators(validatorObj)
+    if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+        validators.RegisterValidators(v)
+    }
 
 	deps := handler.Dependencies{
 		UserRepo:     userRepo,
@@ -43,7 +45,7 @@ func main() {
 	}
 
 	ginEngine := gin.Default()
-	router := routes.NewRouter(ginEngine, &deps, database.Pool, validatorObj)
+	router := routes.NewRouter(ginEngine, &deps, database.Pool)
 	router.SetupRouter()
 
 	for _, route := range ginEngine.Routes() {

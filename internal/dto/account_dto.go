@@ -20,9 +20,9 @@ type AccountJoinedResponse struct {
 }
 
 type AccountCreateRequest struct {
-	Name       string  `json:"name"`
-	CategoryID int     `json:"categoryID"`
-	Balance    float64 `json:"balance"`
+	Name       string  `json:"name" binding:"required,alphaNumericSpace"`
+	CategoryID int     `json:"categoryID" binding:"required,number"`
+	Balance    float64 `json:"balance" binding:"required,number"`
 }
 
 type AccountListResponse struct {
@@ -31,7 +31,7 @@ type AccountListResponse struct {
 }
 
 type AccountUpdateRequest struct {
-	Name       *string  `json:"name"`
-	CategoryID *int     `json:"categoryID"`
-	Balance    *float64 `json:"balance"`
+	Name       *string  `json:"name" binding:"omitempty,alphaNumericSpace"`
+	CategoryID *int     `json:"categoryID" binding:"omitempty,number"`
+	Balance    *float64 `json:"balance" binding:"omitempty,number"`
 }

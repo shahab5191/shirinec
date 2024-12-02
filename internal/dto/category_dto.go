@@ -11,14 +11,14 @@ type CategoriesListResponse struct {
 }
 
 type CategoryCreateRequest struct {
-	Name   string             `json:"name,required"`
-	Color  string             `json:"color,required"`
-	IconID *int               `json:"iconID"`
-	Type   enums.CategoryType `json:"type,required"`
+	Name   string             `json:"name" binding:"required,alphaNumericSpace"`
+	Color  string             `json:"color" binding:"required,hexcolor"`
+	IconID *int               `json:"iconID" binding:"omitempty,number"`
+	Type   enums.CategoryType `json:"type" binding:"required,categoryCreateType"`
 }
 
 type CategoryUpdateRequest struct {
-	Name   *string `json:"name"`
-	Color  *string `json:"color"`
-	IconID *int    `json:"iconID"`
+	Name   *string `json:"name" binding:"omitempty,alphaNumericSpace"`
+	Color  *string `json:"color" binding:"omitempty,hexcolor"`
+	IconID *int    `json:"iconID" binding:"omitempty,number"`
 }

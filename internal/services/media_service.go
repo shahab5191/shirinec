@@ -12,7 +12,7 @@ import (
 
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/enums"
-	server_errors "shirinec.com/internal/errors"
+	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
 )

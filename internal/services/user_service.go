@@ -88,9 +88,13 @@ func (s *userService) NewEmail(ctx context.Context, input dto.UserUpdateEmailReq
 
 	rKey := fmt.Sprintf("new_email:%d", verificationCode)
 	_, err = db.Redis.HSet(ctx, rKey, fields).Result()
+    if err != nil {
+		log.Printf("[Error] - userService.NewEmail - setting verification code to redis: %+v\n", err)
+		return 0, &server_errors.InternalError
+	}
 	_, err = db.Redis.Expire(ctx, rKey, 5*time.Minute).Result()
 	if err != nil {
-		log.Printf("[Error] - userService.NewEmail - setting verification code to redis: %+v\n", err)
+		log.Printf("[Error] - userService.NewEmail - setting Expire code to redis: %+v\n", err)
 		return 0, &server_errors.InternalError
 	}
 	return verificationCode, nil
