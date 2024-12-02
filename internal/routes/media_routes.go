@@ -8,7 +8,7 @@ import (
 
 func (r *router) setupMediaRouter() {
 	mediaService := services.NewMediaService(r.Deps.MediaRepo, r.Deps.ItemRepo, r.Deps.CategoryRepo)
-	mediaHandler := handler.NewMediaHandler(mediaService)
+	mediaHandler := handler.NewMediaHandler(mediaService, r.validatorObj)
 
 	flags := middlewares.AuthMiddleWareFlags{
 		ShouldBeActive: true,

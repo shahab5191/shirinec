@@ -3,12 +3,15 @@ package main
 import (
 	"log"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"shirinec.com/config"
 	"shirinec.com/internal/db"
 	"shirinec.com/internal/handlers"
 	"shirinec.com/internal/repositories"
 	"shirinec.com/internal/routes"
+	"shirinec.com/internal/validators"
 )
 
 func main() {
@@ -28,6 +31,9 @@ func main() {
 	accountRepo := repositories.NewAccountRepository(database.Pool)
 	mediaRepo := repositories.NewMediaRepository(database.Pool)
 
+	validatorObj := validator.New()
+	validators.RegisterValidators(validatorObj)
+
 	deps := handler.Dependencies{
 		UserRepo:     userRepo,
 		CategoryRepo: categoryRepo,
@@ -37,7 +43,7 @@ func main() {
 	}
 
 	ginEngine := gin.Default()
-	router := routes.NewRouter(ginEngine, &deps, database.Pool)
+	router := routes.NewRouter(ginEngine, &deps, database.Pool, validatorObj)
 	router.SetupRouter()
 
 	for _, route := range ginEngine.Routes() {

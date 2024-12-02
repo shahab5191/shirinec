@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/handlers"
 )
@@ -11,22 +12,24 @@ type Router interface {
 	setupCategoryRouter()
 	setupAuthRouter()
 	setupUserRouter()
-    setupItemRouter()
-    setupAccountRouter()
-    setupMediaRouter()
+	setupItemRouter()
+	setupAccountRouter()
+	setupMediaRouter()
 }
 
 type router struct {
-	GinEngine *gin.Engine
-	Deps      *handler.Dependencies
-	db        *pgxpool.Pool
+	GinEngine    *gin.Engine
+	Deps         *handler.Dependencies
+	db           *pgxpool.Pool
+	validatorObj *validator.Validate
 }
 
-func NewRouter(ginEngine *gin.Engine, deps *handler.Dependencies, db *pgxpool.Pool) Router {
+func NewRouter(ginEngine *gin.Engine, deps *handler.Dependencies, db *pgxpool.Pool, validatorObj *validator.Validate) Router {
 	return &router{
-		GinEngine: ginEngine,
-		Deps:      deps,
-		db:        db,
+		GinEngine:    ginEngine,
+		Deps:         deps,
+		db:           db,
+		validatorObj: validatorObj,
 	}
 }
 
@@ -34,7 +37,7 @@ func (r *router) SetupRouter() {
 	r.setupAuthRouter()
 	r.setupCategoryRouter()
 	r.setupUserRouter()
-    r.setupItemRouter()
-    r.setupAccountRouter()
-    r.setupMediaRouter()
+	r.setupItemRouter()
+	r.setupAccountRouter()
+	r.setupMediaRouter()
 }
