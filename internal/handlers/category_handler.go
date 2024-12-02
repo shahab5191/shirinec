@@ -59,7 +59,7 @@ func (h *categoryHandler) Create(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusBadRequest, gin.H{"error": errList})
-        return
+		return
 	}
 
 	if !utils.IsValidHexColor(input.Color) {
@@ -197,6 +197,15 @@ func (h *categoryHandler) Update(c *gin.Context) {
 		log.Printf("[Error] - categoryHandler.Update - Bind body %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
+	}
+
+	if err := h.validate.Struct(input); err != nil {
+		var errList []string
+		for _, err := range err.(validator.ValidationErrors) {
+			errList = append(errList, err.Error())
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": errList})
+        return
 	}
 
 	if input.Color != nil && !utils.IsValidHexColor(*input.Color) {

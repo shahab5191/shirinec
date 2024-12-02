@@ -23,11 +23,10 @@ type MediaHandler interface {
 
 type mediaHandler struct {
 	mediaService services.MediaService
-	validate     *validator.Validate
 }
 
-func NewMediaHandler(mediaService services.MediaService, validate *validator.Validate) MediaHandler {
-	return &mediaHandler{mediaService: mediaService, validate: validate}
+func NewMediaHandler(mediaService services.MediaService) MediaHandler {
+	return &mediaHandler{mediaService: mediaService}
 }
 
 func (h *mediaHandler) Upload(c *gin.Context) {
@@ -40,21 +39,19 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 
 	var input dto.MediaUploadRequest
 	if err = c.ShouldBindQuery(&input); err != nil {
+		var validationErr validator.ValidationErrors
+		if errors.As(err, &validationErr) {
+			var errList []string
+			for _, err := range validationErr {
+				if err.Tag() == "mediaUploadBind" {
+					errList = append(errList, "binds_to should be 'item', 'category' or 'profile'")
+				} else {
+					errList = append(errList, err.Error())
+				}
+			}
+		}
+        log.Printf("[Error] - mediaHandler.Upload - Binding input to dto.MediaUploadRequest: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
-		return
-	}
-
-	if err := h.validate.Struct(input); err != nil {
-        var errList []string
-        for _, err := range err.(validator.ValidationErrors) {
-            if err.Tag() == "mediaUploadBind"{
-                errList = append(errList, "binds_to should be 'item', 'category' or 'profile'")
-            }else{
-                errList = append(errList, err.Error())
-            }
-        }
-
-        c.JSON(http.StatusBadRequest, gin.H{"errors": errList})
 		return
 	}
 

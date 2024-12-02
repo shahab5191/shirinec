@@ -11,7 +11,7 @@ func (r *router) setupAuthRouter() {
 		r.Deps.UserRepo,
 		config.AppConfig.JWTSecret,
 	)
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService, r.validatorObj)
 
 	r.GinEngine.POST("/auth/signup", authHandler.SignUp)
 	r.GinEngine.POST("/auth/login", authHandler.Login)

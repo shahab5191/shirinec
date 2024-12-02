@@ -18,7 +18,7 @@ type CategoryCreateRequest struct {
 }
 
 type CategoryUpdateRequest struct {
-	Name   *string `json:"name"`
-	Color  *string `json:"color"`
-	IconID *int    `json:"iconID"`
+    Name   *string `json:"name" validate:"omitempty,alphanum"`
+    Color  *string `json:"color" validate:"omitempty,hexcolor"`
+    IconID *int    `json:"iconID" validate:"omitempty,number"`
 }

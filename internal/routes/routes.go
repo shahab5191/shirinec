@@ -24,12 +24,11 @@ type router struct {
 	validatorObj *validator.Validate
 }
 
-func NewRouter(ginEngine *gin.Engine, deps *handler.Dependencies, db *pgxpool.Pool, validatorObj *validator.Validate) Router {
+func NewRouter(ginEngine *gin.Engine, deps *handler.Dependencies, db *pgxpool.Pool) Router {
 	return &router{
 		GinEngine:    ginEngine,
 		Deps:         deps,
 		db:           db,
-		validatorObj: validatorObj,
 	}
 }
 
