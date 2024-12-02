@@ -28,6 +28,26 @@ func AsValidatorError(err error) *[]string {
 							length,
 						),
 					)
+                case "len":
+					length, _ := strconv.Atoi(err.Param())
+					errList = append(
+						errList,
+						fmt.Sprintf(
+							"%s length should be exactly %d",
+							err.Field(),
+							length,
+						),
+					)
+                case "intLen":
+					length, _ := strconv.Atoi(err.Param())
+					errList = append(
+						errList,
+						fmt.Sprintf(
+							"%s length should be exactly %d",
+							err.Field(),
+							length,
+						),
+					)
 				case "jwt":
 					errList = append(errList, fmt.Sprintf("%s is not a correct jwt", err.Field()))
 				case "required":
