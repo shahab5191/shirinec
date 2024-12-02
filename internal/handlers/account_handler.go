@@ -38,16 +38,10 @@ func (h *accountHandler) Create(c *gin.Context) {
 	var input dto.AccountCreateRequest
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		var validationErr validator.ValidationErrors
-		if errors.As(err, &validationErr) {
-			var errList []string
-			for _, err := range validationErr {
-				errList = append(errList, err.Error())
-			}
+		if errList := server_errors.AsValidatorError(err); errList != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": errList})
-			return
+            return
 		}
-
 		log.Printf("[Info] - accountHandler.Create - Binding user input to dto.ItemCreateRequest: %+v\n", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
@@ -79,7 +73,7 @@ func (h *accountHandler) Create(c *gin.Context) {
 func (h *accountHandler) List(c *gin.Context) {
 	var input dto.ListRequest
 	if err := c.ShouldBindQuery(&input); err != nil {
-        var validationErr validator.ValidationErrors
+		var validationErr validator.ValidationErrors
 		if errors.As(err, &validationErr) {
 			var errList []string
 			for _, err := range validationErr {

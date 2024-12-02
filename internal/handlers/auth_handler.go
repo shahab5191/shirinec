@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
@@ -15,13 +14,11 @@ import (
 
 type AuthHandler struct {
 	authService services.AuthService
-	validate    *validator.Validate
 }
 
-func NewAuthHandler(authService services.AuthService, validate *validator.Validate) *AuthHandler {
+func NewAuthHandler(authService services.AuthService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
-		validate:    validate,
 	}
 }
 
