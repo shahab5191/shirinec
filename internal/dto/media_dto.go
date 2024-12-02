@@ -7,7 +7,7 @@ import (
 )
 
 type MediaUploadRequest struct {
-	BindsTo enums.MediaUploadBind `form:"binds_to, required"`
+	BindsTo enums.MediaUploadBind `form:"binds_to, required" validate:"required,mediaUploadBind"`
 	BindID  int                   `form:"bind_id, required"`
 }
 
