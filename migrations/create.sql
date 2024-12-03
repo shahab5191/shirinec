@@ -1,21 +1,19 @@
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS accounts CASCADE;
-DROP TABLE IF EXISTS expenses;
 DROP TABLE IF EXISTS categories CASCADE;
-DROP TABLE IF EXISTS incomes;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
 DROP TABLE IF EXISTS media CASCADE;
-DROP TABLE IF EXISTS accounts;
-DROP TABLE IF EXISTS account_types;
-DROP TABLE IF EXISTS media_assosiations;
+DROP TABLE IF EXISTS media_bindings;
 DROP TABLE IF EXISTS items CASCADE;
 DROP TABLE IF EXISTS purchase_list_items;
+DROP TABLE IF EXISTS group_policies;
 
 DROP TYPE IF EXISTS UserStatus;
 DROP TYPE IF EXISTS UserRole;
 DROP TYPE IF EXISTS TransactionType;
 DROP TYPE IF EXISTS CategoryEntityType;
+DROP TYPE IF EXISTS MediaBind CASCADE;
 
 CREATE TYPE UserStatus AS ENUM ('Banned', 'Verified', 'Disabled', 'Locked', 'Pending');
 
@@ -24,6 +22,8 @@ CREATE TYPE UserRole AS ENUM ('Admin', 'User');
 CREATE TYPE TransactionType AS ENUM ('Income', 'Expense', 'Transfer');
 
 CREATE TYPE CategoryEntityType AS ENUM ('Income', 'Expense', 'Account');
+
+CREATE TYPE  MediaBind AS ENUM ('Item', 'Profile', 'Category');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -52,6 +52,7 @@ CREATE TABLE profiles (
 CREATE TABLE media (
     id SERIAL PRIMARY KEY,
     url TEXT NOT NULL,
+    file_path TEXT NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
     metadata JSON,
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -113,11 +114,19 @@ CREATE TABLE purchase_list_items (
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE media_assosiations (
+CREATE TABLE media_bindings (
     id SERIAL PRIMARY KEY,
     media_id INT NOT NULL REFERENCES media(id),
-    entity_type VARCHAR(45) NOT NULL,
-    entity_id INT NOT NULL
+    bind_type MediaBind NOT NULL,
+    bind_id INT NOT NULL
+);
+
+CREATE TABLE group_policies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id),
+    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE media DROP CONSTRAINT IF EXISTS fk_user_id;
@@ -167,3 +176,34 @@ CREATE TRIGGER validate_item_category
 BEFORE INSERT OR UPDATE ON accounts
 FOR EACH ROW
 EXECUTE FUNCTION check_account_category();
+
+CREATE OR REPLACE FUNCTION update_date_on_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT (NEW IS DISTINCT FROM OLD) THEN
+        RETURN NULL;
+    END IF;
+
+    NEW.update_date := CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON accounts
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON categories
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON transactions
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON profiles
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON media
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON items
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON purchase_list_items
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON group_policies
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
