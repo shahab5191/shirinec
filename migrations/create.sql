@@ -7,23 +7,28 @@ DROP TABLE IF EXISTS media CASCADE;
 DROP TABLE IF EXISTS media_bindings;
 DROP TABLE IF EXISTS items CASCADE;
 DROP TABLE IF EXISTS purchase_list_items;
-DROP TABLE IF EXISTS group_policies;
+DROP TABLE IF EXISTS account_access;
+DROP TABLE IF EXISTS financial_groups CASCADE;
+DROP TABLE IF EXISTS user_financial_groups;
 
 DROP TYPE IF EXISTS UserStatus;
 DROP TYPE IF EXISTS UserRole;
 DROP TYPE IF EXISTS TransactionType;
 DROP TYPE IF EXISTS CategoryEntityType;
 DROP TYPE IF EXISTS MediaBind CASCADE;
+DROP TYPE IF EXISTS AccessLevel CASCADE;
 
-CREATE TYPE UserStatus AS ENUM ('Banned', 'Verified', 'Disabled', 'Locked', 'Pending');
+CREATE TYPE UserStatus AS ENUM ('banned', 'verified', 'disabled', 'locked', 'pending');
 
-CREATE TYPE UserRole AS ENUM ('Admin', 'User');
+CREATE TYPE UserRole AS ENUM ('admin', 'user');
 
-CREATE TYPE TransactionType AS ENUM ('Income', 'Expense', 'Transfer');
+CREATE TYPE TransactionType AS ENUM ('income', 'expense', 'transfer');
 
-CREATE TYPE CategoryEntityType AS ENUM ('Income', 'Expense', 'Account');
+CREATE TYPE CategoryEntityType AS ENUM ('income', 'expense', 'account');
 
-CREATE TYPE  MediaBind AS ENUM ('Item', 'Profile', 'Category');
+CREATE TYPE MediaBind AS ENUM ('item', 'transaction');
+
+CREATE TYPE AccessLevel AS ENUM ('view', 'edit', 'all');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -33,7 +38,7 @@ CREATE TABLE users (
     last_login TIMESTAMP,
     last_password_change TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     failed_tries INT DEFAULT 0,
-    status UserStatus DEFAULT 'Pending',
+    status UserStatus DEFAULT 'pending',
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     profile_id INT NOT NULL
@@ -65,7 +70,7 @@ CREATE TABLE categories (
     name VARCHAR(255) NOT NULL,
     color VARCHAR(7) NOT NULL CHECK (color ~ '^#[0-9a-fA-F]{6}$'),
     icon_id INT REFERENCES media(id),
-    entity_type CategoryEntityType NOT NULL,
+entity_type CategoryEntityType NOT NULL,
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -121,10 +126,25 @@ CREATE TABLE media_bindings (
     bind_id INT NOT NULL
 );
 
-CREATE TABLE group_policies (
+CREATE TABLE financial_groups (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
+    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_financial_groups (
+    id SERIAL PRIMARY KEY,
+    financial_group_id INT NOT NULL REFERENCES financial_groups(id),
+    user_id UUID NOT NULL REFERENCES users(id)
+);
+
+CREATE TABLE account_access (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id),
+    account_id INT NOT NULL REFERENCES accounts(id),
+    access AccessLevel NOT NULL DEFAULT 'view',
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -205,5 +225,5 @@ CREATE TRIGGER update_date_trigger BEFORE UPDATE ON items
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON purchase_list_items
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
-CREATE TRIGGER update_date_trigger BEFORE UPDATE ON group_policies
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON account_access
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
