@@ -2,8 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +9,7 @@ import (
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
+	"shirinec.com/internal/utils"
 )
 
 type UserHandler interface {
@@ -35,6 +34,7 @@ func (h *userHandler) NewPassword(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
+        utils.Logger.Errorf("Binding input to dto.UserUpdatePasswordRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -47,13 +47,7 @@ func (h *userHandler) NewPassword(c *gin.Context) {
 
 	err = h.userService.NewPassword(context.Background(), input, userID)
 	if err != nil {
-		log.Printf("[Error] - userHandler.NewPassword - calling userService.NewPassword: %+v\n", err)
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-		} else {
-			c.JSON(server_errors.InternalError.Unwrap())
-		}
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -67,7 +61,7 @@ func (h *userHandler) NewEmail(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Warning] - userHandler.NewEmail - Undefined error while binding input to dto.UserUpdateEmailRequest: %+v\n", err)
+		utils.Logger.Warnf("userHandler.NewEmail - Undefined error while binding input to dto.UserUpdateEmailRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -79,13 +73,7 @@ func (h *userHandler) NewEmail(c *gin.Context) {
 
 	verificationCode, err := h.userService.NewEmail(context.Background(), input, userID)
 	if err != nil {
-		log.Printf("[Error] - userHandler.NewEmail - Calling userService.NewEmail: %+v\n", err)
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-		} else {
-			c.JSON(server_errors.InternalError.Unwrap())
-		}
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -100,25 +88,21 @@ func (h *userHandler) NewEmailVerification(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Warning] - userHandler.NewEmailVerification - Undefined error while binding input to dto.UserVerificationRequest: %+v\n", err)
+		utils.Logger.Errorf("userHandler.NewEmailVerification - Undefined error while binding input to dto.UserVerificationRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
+        utils.Logger.Errorf("userHandler.NewEmailVerification - Parsing uuid from user_id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	err = h.userService.NewEmailVerification(context.Background(), input.VerificationCode, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -132,27 +116,21 @@ func (h *userHandler) SignupVerification(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Warning] - userHandler.SignupVerification - Undefined error while binding input to dto.UserVerificationRequest: %+v\n", err)
+		utils.Logger.Warnf("userHandler.SignupVerification - Undefined error while binding input to dto.UserVerificationRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-        log.Printf("[Error] - userHandler.SignupVerification - Parsing user_id to uuid: %+v\n", err)
+        utils.Logger.Errorf("[Error] - userHandler.SignupVerification - Parsing user_id to uuid: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	err = h.userService.SignupVerification(context.Background(), input.VerificationCode, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-        log.Printf("[Error] - userHandler.SignupVerification - Calling userService.SignupVerification: %+v\n", err)
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
