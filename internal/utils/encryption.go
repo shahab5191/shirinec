@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -60,7 +59,7 @@ func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
         return secret, nil
     })
     if err != nil {
-        log.Printf("Error parsing refresh token: %+v\n", err)
+        Logger.Errorf("Error parsing refresh token: %+v\n", err.Error())
         var validationErr *jwt.ValidationError
         if errors.As(err, &validationErr){
             if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
@@ -79,7 +78,7 @@ func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
     if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
         return claims, nil
     }else{
-        log.Printf("parsedToken: %+v\n", claims)
+        Logger.Errorf("parsedToken: %+v\n", claims)
     }
 
     return nil, &server_errors.InvalidToken
