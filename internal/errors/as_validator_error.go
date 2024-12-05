@@ -28,7 +28,7 @@ func AsValidatorError(err error) *[]string {
 							length,
 						),
 					)
-                case "len":
+				case "len":
 					length, _ := strconv.Atoi(err.Param())
 					errList = append(
 						errList,
@@ -38,7 +38,7 @@ func AsValidatorError(err error) *[]string {
 							length,
 						),
 					)
-                case "intLen":
+				case "intLen":
 					length, _ := strconv.Atoi(err.Param())
 					errList = append(
 						errList,
@@ -60,6 +60,8 @@ func AsValidatorError(err error) *[]string {
 					errList = append(errList, fmt.Sprintf("%s field must contain only letters and numbers characters", err.Field()))
 				case "alphaNumericSpace":
 					errList = append(errList, fmt.Sprintf("%s field must contain only letters, numbers, or spaces.", err.Field()))
+				case "mediaUploadBind":
+					errList = append(errList, "binds_to should be 'item', 'profile' or 'category'")
 				default:
 					log.Printf("[Error] - AsValidatorError - Undefined error tag: %+v\n", err)
 					errList = append(errList, err.Error())

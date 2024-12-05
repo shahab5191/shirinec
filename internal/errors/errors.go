@@ -43,7 +43,7 @@ var (
 	InvalidVerificationCode    = SError{Code: http.StatusBadRequest, Message: "Invalid verification code!", ErrorCode: 114}
 	FileRequired               = SError{Code: http.StatusBadRequest, Message: "File is required", ErrorCode: 115}
 	InvalidFileFormat          = SError{Code: http.StatusBadRequest, Message: "Only .png, .jpg and .jpeg files are allowed", ErrorCode: 116}
-	CategoryNotFound           = SError{Code: http.StatusBadRequest, Message: "Requested category was not found!", ErrorCode: 116}
+	CategoryNotFound           = SError{Code: http.StatusBadRequest, Message: "Requested category was not found!", ErrorCode: 117}
 )
 
 func ValidationErrorBuilder(errList *[]string) *SError {
