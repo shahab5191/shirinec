@@ -77,7 +77,6 @@ func parseToken(token string, secret []byte) (jwt.MapClaims, error) {
     }
 
     if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
-        log.Printf("Claims: %+v\n", claims)
         return claims, nil
     }else{
         log.Printf("parsedToken: %+v\n", claims)

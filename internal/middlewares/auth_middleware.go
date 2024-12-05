@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +22,6 @@ type AuthMiddleWareFlags struct {
 func AuthMiddleWare(flags AuthMiddleWareFlags, db *pgxpool.Pool) gin.HandlerFunc {
     return func(ctx *gin.Context) {
         authHeader := ctx.GetHeader("Authorization")
-        log.Printf("[Info] - AuthMiddleWare - Header fetched")
         if authHeader == "" {
             ctx.JSON(server_errors.Unauthorized.Unwrap())
             ctx.Abort()

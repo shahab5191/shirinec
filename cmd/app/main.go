@@ -7,11 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+
 	"shirinec.com/config"
 	"shirinec.com/internal/db"
 	"shirinec.com/internal/handlers"
 	"shirinec.com/internal/repositories"
 	"shirinec.com/internal/routes"
+	"shirinec.com/internal/utils"
 	"shirinec.com/internal/validators"
 )
 
@@ -32,9 +34,9 @@ func main() {
 	accountRepo := repositories.NewAccountRepository(database.Pool)
 	mediaRepo := repositories.NewMediaRepository(database.Pool)
 
-    if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-        validators.RegisterValidators(v)
-    }
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		validators.RegisterValidators(v)
+	}
 
 	deps := handler.Dependencies{
 		UserRepo:     userRepo,
@@ -44,7 +46,11 @@ func main() {
 		MediaRepo:    mediaRepo,
 	}
 
+	utils.InitLogger()
+
+
 	ginEngine := gin.Default()
+
 	router := routes.NewRouter(ginEngine, &deps, database.Pool)
 	router.SetupRouter()
 

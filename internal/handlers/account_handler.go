@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -12,6 +11,7 @@ import (
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
+	"shirinec.com/internal/utils"
 )
 
 type AccountHandler interface {
@@ -37,10 +37,11 @@ func (h *accountHandler) Create(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		if errList := server_errors.AsValidatorError(err); errList != nil {
+            utils.Logger.Infof("Error is ValidatorError: %s", err.Error())
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Info] - accountHandler.Create - Binding user input to dto.ItemCreateRequest: %+v\n", err)
+		utils.Logger.Infof("Binding user input to dto.ItemCreateRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -49,14 +50,14 @@ func (h *accountHandler) Create(c *gin.Context) {
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[Error] - accountHandler.Create - Parsing uuid from id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	item, err := h.accountService.Create(context.Background(), &input, uid)
 	if err != nil {
-		log.Printf("[Error] - accountHandler.Create - Calling accountService.Create :%+v\n", err)
+		utils.Logger.Errorf("Calling accountService.Create :%s", err.Error())
 		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
@@ -75,14 +76,14 @@ func (h *accountHandler) List(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Error] - accountHandler.List - Binding input query to dto.ListRequest: %+v\n", err)
+		utils.Logger.Errorf("Binding input query to dto.ListRequest: %s", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.List - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -99,14 +100,14 @@ func (h *accountHandler) List(c *gin.Context) {
 func (h *accountHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.GetByID - Parsing id param: %+v\n", err)
+		utils.Logger.Errorf("Parsing id param: %s", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.GetByID - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -123,14 +124,14 @@ func (h *accountHandler) GetByID(c *gin.Context) {
 func (h *accountHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.Delete - Parsing id from context: %+v\n", err)
+		utils.Logger.Errorf("Parsing id from context: %s", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.Delete - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -147,14 +148,14 @@ func (h *accountHandler) Delete(c *gin.Context) {
 func (h *accountHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.Update - Parsing id from param: %+v\n", err)
+		utils.Logger.Errorf("Parsing id from param: %s", err)
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - accountHandler.Update - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
