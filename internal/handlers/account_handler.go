@@ -57,7 +57,6 @@ func (h *accountHandler) Create(c *gin.Context) {
 
 	item, err := h.accountService.Create(context.Background(), &input, uid)
 	if err != nil {
-		utils.Logger.Errorf("Calling accountService.Create :%s", err.Error())
 		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}

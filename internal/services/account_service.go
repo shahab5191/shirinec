@@ -39,6 +39,10 @@ func (s *accountService) Create(ctx context.Context, input *dto.AccountCreateReq
 
 	err := s.accountRepo.Create(ctx, &item)
 	if err != nil {
+        pgErr := server_errors.AsPgError(err)
+        if pgErr != nil {
+            return nil, pgErr
+        }
 		log.Printf("[Error] - accountService.Create - Calling accountRepo.Create: %+v\n", err)
 		return nil, &server_errors.InternalError
 	}

@@ -2,6 +2,7 @@ package server_errors
 
 import (
 	"errors"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -22,6 +23,8 @@ func AsPgError(err error) error {
 			return &InvalidInput
 		case PGCategoryNotFound:
 			return &CategoryNotFound
+        default:
+            log.Printf("Undefined Postgresql error: %s", pgErr.Error())
 		}
 	}
 	return nil
