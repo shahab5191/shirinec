@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,21 +36,19 @@ func NewAuthService(userRepo repositories.UserRepository, jwtSecret string) Auth
 func (s *authService) CreateUser(ctx context.Context, input *dto.AuthSignupRequest, ip string) (*dto.AuthLoginResponse, error) {
 	password, err := utils.HashPassword(input.Password)
 	if err != nil {
-		log.Printf("Error hashing password: %+v\n", err)
+		utils.Logger.Errorf("authService.Create - Calling utils.HashingPassword: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
-	existingUser, err := s.userRepo.GetByEmail(ctx, input.Email)
+	_, err = s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			log.Printf("Error getting user by email! %s\n", err)
+			utils.Logger.Errorf("ErrorauthService.Create - Calling userRepo.GetByEmail: %s", err.Error())
 			return nil, &server_errors.InternalError
 		}
 	} else {
 		return nil, &server_errors.UserAlreadyExistsError
 	}
-
-	log.Printf("%+v\n", existingUser)
 
 	user := models.User{
 		ID:       uuid.New(),
@@ -62,18 +59,18 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.AuthSignupReque
 
 	err = s.userRepo.Create(ctx, &user)
 	if err != nil {
-		log.Printf("Error creating user in datbase: %s", err)
+		utils.Logger.Errorf("authService.CreateUser - Calling userRepo.Create: %+v", err)
 		return nil, &server_errors.InternalError
 	}
 
 	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
-		log.Printf("Error generating access token: %s", err)
+		utils.Logger.Errorf("authService.CreateUser - Calling utils.GenerateAccessToken: %+v", err)
 		return nil, &server_errors.InternalError
 	}
 	refreshToken, err := utils.GenerateRefreshToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
-		log.Printf("Error generating refresh token: %s", err)
+		utils.Logger.Errorf("authService.CreateUser - Calling utils.GenerateRefreshToken: %+v", err)
 		return nil, &server_errors.InternalError
 	}
 
@@ -82,7 +79,7 @@ func (s *authService) CreateUser(ctx context.Context, input *dto.AuthSignupReque
 	rKey := fmt.Sprintf("signup:%d", verificationCode)
 	_, err = db.Redis.SetEx(ctx, rKey, user.ID.String(), 5*time.Minute).Result()
 	if err != nil {
-		log.Printf("[Error] - authService.CreateUser - Setting verification code to redis: %+v\n", err)
+		utils.Logger.Errorf("authService.CreateUser - Setting verification code to redis: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -100,39 +97,35 @@ func (s *authService) Login(email, password, ip string) (*dto.AuthLoginResponse,
 	var res dto.AuthLoginResponse
 	user, err := s.userRepo.GetByEmail(context.Background(), email)
 	if err != nil {
-		log.Printf("Error getting user by email from db: %s", err)
-		return &res, &server_errors.CredentialError
-	}
-
-	hashedPassword, err := utils.HashPassword(password)
-	if err != nil {
-		log.Printf("Error hashing password: %s", err)
-		return nil, &server_errors.InternalError
+		if errors.Is(err, sql.ErrNoRows) {
+			return &res, &server_errors.CredentialError
+		}
+		utils.Logger.Errorf("authService.Login - Calling userRepo.GetByEmail: %s", err.Error())
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Printf("Password is not correct")
-		log.Printf("Provided pass: %s\nDatabase pass: %s\n", hashedPassword, user.Password)
 		return nil, &server_errors.CredentialError
 	}
 
 	accessToken, err := utils.GenerateAccessToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
-		log.Printf("Error generating access token: %s", err)
+		utils.Logger.Errorf("authService.Login - Calling utils.GenerateAccessToken: %+v", err)
 		return nil, &server_errors.InternalError
 	}
 	refreshToken, err := utils.GenerateRefreshToken(user.ID.String(), user.Email, user.LastPasswordChange)
 	if err != nil {
-		log.Printf("Error generating refresh token: %s", err)
+		utils.Logger.Errorf("authService.Login - Calling utils.GenerateRefreshToken: %+v", err)
 		return nil, &server_errors.InternalError
 	}
 
 	err = s.userRepo.Login(context.Background(), ip)
-    if err != nil {
-        if errors.Is(err, sql.ErrNoRows){
-            return nil, &server_errors.UserNotFound
-        }
-    }
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &server_errors.UserNotFound
+		}
+		utils.Logger.Errorf("authService.Login - Calling userRepo.Login: %s", err.Error())
+		return nil, &server_errors.InternalError
+	}
 
 	response := dto.AuthLoginResponse{
 		ID:           user.ID,
@@ -151,40 +144,36 @@ func (s *authService) Refresh(token string) (*dto.AuthLoginResponse, error) {
 
 	id, ok := claims["id"].(string)
 	if !ok {
-		log.Println("Error fetching id from token claims")
+		utils.Logger.Error("authService.Refresh - Getting id from claims")
 		return nil, &server_errors.InternalError
 	}
 
 	email, ok := claims["email"].(string)
 	if !ok {
-		log.Println("Error fetcing email from token claims")
+		utils.Logger.Error("authService.Refresh - Getting email from claims")
 		return nil, &server_errors.InternalError
 	}
 
 	uuID, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[Error] - authService.Refresh - casting id to uuid %+v\n", uuID)
+		utils.Logger.Errorf("authService.Refresh - Parsing uuid from id string: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
 	lastPasswordChangeUnixFloat, ok := claims["lastPasswordChange"].(float64)
 	if !ok {
-		log.Println("[Error] - authService.Refresh - could not get lastPasswordChange float64 from token claims")
+		utils.Logger.Error("authService.Refresh - Getting lastPasswordChange from calims")
 		return nil, &server_errors.InternalError
 	}
 	lastPasswordChangeUnixInt := int64(lastPasswordChangeUnixFloat)
 	lastPasswordChange := time.Unix(int64(lastPasswordChangeUnixInt), 0).UTC()
-	if err != nil {
-		log.Println("Error parsing lastPasswordChange to time format")
-		return nil, &server_errors.InternalError
-	}
 
 	user, err := s.userRepo.GetByID(context.Background(), uuID)
 	if err != nil {
-		log.Printf("[Error] - authService.Refersh - getting user by id")
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.UserNotFound
 		}
+		utils.Logger.Errorf("authService.Refersh - Calling userRepo.GetById: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -194,13 +183,14 @@ func (s *authService) Refresh(token string) (*dto.AuthLoginResponse, error) {
 
 	accessToken, err := utils.GenerateAccessToken(id, email, lastPasswordChange)
 	if err != nil {
-		log.Printf("[Error] - Refresh - generating access token: %+v\n", err)
+		utils.Logger.Errorf("Refresh - Calling utils.GenerateAccessToken: %s", err.Error())
 		return nil, err
 	}
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[Error] - Refresh - Error parsing id from string to uuid: %+v\n", err)
+		utils.Logger.Errorf("Refresh - Parsing uuid from id string: %s", err.Error())
+		return nil, &server_errors.InternalError
 	}
 
 	loginResponse := dto.AuthLoginResponse{ID: uid, AccessToken: accessToken, RefreshToken: token}

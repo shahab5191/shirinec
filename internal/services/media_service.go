@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +14,7 @@ import (
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
+	"shirinec.com/internal/utils"
 )
 
 type MediaService interface {
@@ -60,7 +60,7 @@ func (s *mediaService) Create(ctx context.Context, input *dto.MediaUploadRequest
 			return nil, &server_errors.ItemNotFound
 		}
 
-		log.Printf("[Error] - mediaService.Create - Calling mediaRepo.CreateFor%s: %+v\n", input.BindsTo, err)
+        utils.Logger.Errorf("mediaService.Create - Calling mediaRepo.CreateFor%s: %s", input.BindsTo, err.Error())
 		return nil, &server_errors.InternalError
 	}
 

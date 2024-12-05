@@ -3,13 +3,13 @@ package handler
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
+	"shirinec.com/internal/utils"
 )
 
 type AuthHandler struct {
@@ -39,7 +39,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 			c.JSON(server_errors.UserAlreadyExistsError.Unwrap())
 			return
 		}
-		log.Printf("[Error] - AuthHandler.SignUp - Calling authService.CreateUser: %+v", err)
+		utils.Logger.Errorf("Calling authService.CreateUser: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -54,19 +54,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Error] - AuthHandler.Login - binding input to dto.AuthLoginRequest: %s", err)
+		utils.Logger.Errorf("binding input to dto.AuthLoginRequest: %s", err.Error())
 		c.JSON(server_errors.CredentialError.Unwrap())
 		return
 	}
 
 	loginResponse, err := h.authService.Login(credentials.Email, credentials.Password, c.ClientIP())
-	var se *server_errors.SError
 	if err != nil {
-		if errors.As(err, &se) {
-			c.JSON(se.Unwrap())
-			return
-		}
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -80,19 +75,14 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Error] - AuthHandler.RefreshToken - binding request to dto: %+v\n", err)
+		utils.Logger.Errorf("binding request to dto: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	response, err := h.authService.Refresh(requestDTO.RefreshToken)
 	if err != nil {
-		var serverError *server_errors.SError
-		if errors.As(err, &serverError) {
-			c.JSON(serverError.Unwrap())
-			return
-		}
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 	c.JSON(http.StatusOK, response)

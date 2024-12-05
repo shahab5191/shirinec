@@ -2,9 +2,7 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"path/filepath"
 
@@ -14,6 +12,7 @@ import (
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
+	"shirinec.com/internal/utils"
 )
 
 type MediaHandler interface {
@@ -31,7 +30,7 @@ func NewMediaHandler(mediaService services.MediaService) MediaHandler {
 func (h *mediaHandler) Upload(c *gin.Context) {
 	file, err := c.FormFile("image")
 	if err != nil {
-		log.Printf("[Error] - mediaHandler.Upload - Calling c.FormFile: %+v\n", err)
+		utils.Logger.Errorf("Calling c.FormFile: %s", err.Error())
 		c.JSON(server_errors.FileRequired.Unwrap())
 		return
 	}
@@ -42,14 +41,14 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-        log.Printf("[Warning] - mediaHandler.Upload - Undefined error while binding input to dto.MediaUploadRequest: %+v\n", err)
+        utils.Logger.Warnf("Undefined error while binding input to dto.MediaUploadRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - mediaHandler.Upload - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("mediaHandler.Upload - Parsing uuid from user_id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -63,19 +62,14 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 	fileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 	savePath := fmt.Sprintf("%s/%s", config.AppConfig.UploadFolder, fileName)
 	if err = c.SaveUploadedFile(file, savePath); err != nil {
-		log.Printf("[Error] - mediaHandler.Upload - Saving file: %+v\n", err)
+		utils.Logger.Errorf("mediaHandler.Upload - Saving file: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	media, err := h.mediaService.Create(context.Background(), &input, savePath, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-		c.JSON(server_errors.InternalError.Unwrap())
+        c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 

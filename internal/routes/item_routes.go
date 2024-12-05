@@ -1,15 +1,12 @@
 package routes
 
 import (
-	"log"
-
 	"shirinec.com/internal/handlers"
 	"shirinec.com/internal/middlewares"
 	"shirinec.com/internal/services"
 )
 
 func (r *router) setupItemRouter() {
-	log.Println("Setting up item router")
 	itemService := services.NewItemService(&r.Deps.ItemRepo)
 	itemHandler := handler.NewItemHandler(&itemService)
 
