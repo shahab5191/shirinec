@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -13,6 +12,7 @@ import (
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
+	"shirinec.com/internal/utils"
 )
 
 type ItemHandler interface {
@@ -38,7 +38,7 @@ func (h *itemHandler) Create(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Warning] - itemHandler.Create - Undefined error binding user input to dto.ItemCreateRequest: %+v\n", err)
+		utils.Logger.Warnf("Undefined error binding user input to dto.ItemCreateRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -47,7 +47,7 @@ func (h *itemHandler) Create(c *gin.Context) {
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[Error] - itemHandler.Create - Parsing uuid from id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -72,25 +72,21 @@ func (h *itemHandler) List(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Warning] - itemHandler.List - Undefined error while binding input query to dto.ListRequest: %+v\n", err)
+		utils.Logger.Warnf("Undefined error while binding input query to dto.ListRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.List - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	items, err := h.itemService.List(context.Background(), input.Page, input.Size, userID)
 	if err != nil {
-		if sErr, ok := err.(*server_errors.SError); ok {
-			c.JSON(sErr.Unwrap())
-		}
-		log.Printf("[Error] - itemHandler.List - impossible error: %+v\n", err)
-		c.JSON(server_errors.InternalError.Unwrap())
+        c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -100,26 +96,21 @@ func (h *itemHandler) List(c *gin.Context) {
 func (h *itemHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.GetByID - Parsing id param: %+v\n", err)
+		utils.Logger.Errorf("Parsing id param: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.GetByID - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	item, err := h.itemService.GetByID(context.Background(), id, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-		log.Printf("[Error] - itemHandler.GetByID - impossible Error!: %+v\n", err)
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -129,26 +120,20 @@ func (h *itemHandler) GetByID(c *gin.Context) {
 func (h *itemHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.Delete - Parsing id from context: %+v\n", err)
+		utils.Logger.Errorf("Parsing id from context: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.Delete - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
 
 	if err = h.itemService.Delete(context.Background(), id, userID); err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-		log.Printf("[Error] - itemService.Delete - Impossible error: %+v\n", err)
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -158,14 +143,14 @@ func (h *itemHandler) Delete(c *gin.Context) {
 func (h *itemHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.Update - Parsing id from param: %+v\n", err)
+		utils.Logger.Errorf("Parsing id from param: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		log.Printf("[Error] - itemHandler.Update - Parsing uuid from user_id string: %+v\n", err)
+		utils.Logger.Errorf("Parsing uuid from user_id string: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -176,19 +161,14 @@ func (h *itemHandler) Update(c *gin.Context) {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}
-		log.Printf("[Warning] - itemHandler.Update - Undefined error while binding input to dto.ItemUpdateRequest: %+v\n", err)
+		utils.Logger.Warnf("Undefined error while binding input to dto.ItemUpdateRequest: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	item, err := h.itemService.Update(context.Background(), &input, id, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(err.(*server_errors.SError).Unwrap())
-			return
-		}
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
