@@ -3,19 +3,19 @@ package enums
 type CategoryType string
 
 const (
-	Income  CategoryType = "Income"
-	Expense CategoryType = "Expense"
-	Account CategoryType = "Account"
+	Income  CategoryType = "income"
+	Expense CategoryType = "expense"
+	Account CategoryType = "account"
 )
 
 type UserStatus string
 
 const (
-	StatusBanned   UserStatus = "Banned"
-	StatusVerified UserStatus = "Verified"
-	StatusDisabled UserStatus = "Disabled"
-	StatusLocked   UserStatus = "Locked"
-	StatusPending  UserStatus = "Pending"
+	StatusBanned   UserStatus = "banned"
+	StatusVerified UserStatus = "verified"
+	StatusDisabled UserStatus = "disabled"
+	StatusLocked   UserStatus = "locked"
+	StatusPending  UserStatus = "pending"
 )
 
 type MediaUploadBind string

@@ -8,8 +8,6 @@ import (
 	"math"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
-	"shirinec.com/internal/db"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
@@ -63,20 +61,16 @@ func (s *accountService) List(ctx context.Context, page, size int, userID uuid.U
 	response.Pagination.RemainingPages = remainingPages
 
 	if err != nil {
-		log.Printf("[Error] - accountService.List - Calling accountRepo.List: %+v\n", err)
-
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
 
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
-            if pgErr.Code == db.PGExceptionDefault {
-                return nil, &server_errors.InvalidInput
-            }
-		}
+        pgErr := server_errors.AsPgError(err)
+        if pgErr != nil {
+            return nil, pgErr
+        }
 
+		log.Printf("[Error] - accountService.List - Calling accountRepo.List: %+v\n", err)
 		return nil, &server_errors.InternalError
 	}
 
@@ -123,14 +117,12 @@ func (s *accountService) Update(ctx context.Context, input *dto.AccountUpdateReq
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == db.ForeignKeyViolation {
-				return nil, &server_errors.InvalidInput
-			}else if pgErr.Code == db.PGExceptionDefault{
-                return nil, &server_errors.InvalidInput
-            }
-		}
+
+        pgErr := server_errors.AsPgError(err)
+        if pgErr != nil {
+            return nil, pgErr
+        }
+
 		log.Printf("[Error] - accountService.Update - Calling accountRepo.Update: %+v\n", err)
 		return nil, &server_errors.InternalError
 	}

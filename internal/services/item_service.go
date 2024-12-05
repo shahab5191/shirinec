@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"shirinec.com/internal/db"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
@@ -41,15 +40,11 @@ func (s *itemService) Create(ctx context.Context, input *dto.ItemCreateRequest, 
 
 	err := s.itemRepo.Create(ctx, &item)
 	if err != nil {
-		log.Printf("[Error] - itemService.Create - Calling itemRepo.Create: %+v\n", err)
-
-		var pgErr *pgconn.PgError
-        if errors.As(err, &pgErr){
-            if pgErr.Code == db.PGExceptionDefault {
-                return nil, &server_errors.InvalidInput
-            }
+        pgErr := server_errors.AsPgError(err)
+        if pgErr  != nil {
+            return nil, pgErr
         }
-
+		log.Printf("[Error] - itemService.Create - Calling itemRepo.Create: %+v\n", err)
 		return nil, &server_errors.InternalError
 	}
 
@@ -128,14 +123,10 @@ func (s *itemService) Update(ctx context.Context, input *dto.ItemUpdateRequest, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == db.ForeignKeyViolation {
-				return nil, &server_errors.InvalidInput
-			} else if pgErr.Code == db.PGExceptionDefault {
-				return nil, &server_errors.InvalidInput
-			}
-		}
+        pgErr := server_errors.AsPgError(err)
+        if pgErr != nil {
+            return nil, pgErr
+        }
 		log.Printf("[Error] - itemService.Update - Calling itemRepo.Update: %+v\n", err)
 		return nil, &server_errors.InternalError
 	}

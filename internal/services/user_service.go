@@ -112,7 +112,6 @@ func (s *userService) NewEmailVerification(ctx context.Context, verificationCode
 		return &server_errors.InternalError
 	}
 
-	log.Printf("HGetAll res: %+v\n", res)
 	if userID.String() != res["userID"] {
 		return &server_errors.InvalidVerificationCode
 	}
@@ -132,10 +131,8 @@ func (s *userService) NewEmailVerification(ctx context.Context, verificationCode
 
 func (s *userService) SignupVerification(ctx context.Context, verificationCode int, userID uuid.UUID) error {
 	rKey := fmt.Sprintf("signup:%d", verificationCode)
-    log.Printf("rKey: %+v\n", rKey)
 
 	res, err := db.Redis.Get(ctx, rKey).Result()
-    log.Printf("res: %+v\n", res)
 	if err != nil {
 		if err == redis.Nil {
 			return &server_errors.InvalidVerificationCode

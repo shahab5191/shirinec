@@ -1,0 +1,23 @@
+package server_errors
+
+import (
+	"github.com/jackc/pgx/v5/pgconn"
+)
+
+const (
+    ForeignKeyViolation = "23503"
+    PGExceptionDefault = "P0001"
+)
+
+func AsPgError(err error) error {
+    if err != nil {
+        var pgErr *pgconn.PgError
+        switch pgErr.Code {
+        case PGExceptionDefault:
+            return &InvalidInput
+        case ForeignKeyViolation:
+            return &InvalidInput
+        }
+    }
+    return nil
+}

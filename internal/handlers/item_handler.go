@@ -54,7 +54,6 @@ func (h *itemHandler) Create(c *gin.Context) {
 
 	item, err := h.itemService.Create(context.Background(), &input, uid)
 	if err != nil {
-		log.Printf("[Error] - itemHandler.Create - Calling itemService.Create :%+v\n", err)
 		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}

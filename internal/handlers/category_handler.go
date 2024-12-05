@@ -5,14 +5,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
-	"shirinec.com/internal/enums"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
@@ -68,11 +65,7 @@ func (h *categoryHandler) Create(c *gin.Context) {
 	category.Name = &input.Name
 	category.Color = &input.Color
 	category.IconID = input.IconID
-	entityTypeStr := string(input.Type)
-	entityTypeStr = strings.ToLower(entityTypeStr)
-	entityTypeStr = string(unicode.ToUpper(rune(entityTypeStr[0]))) + entityTypeStr[1:]
-	entityType := enums.CategoryType(entityTypeStr)
-	category.EntityType = &entityType
+	category.EntityType = &input.Type
 	log.Printf("Category Object: %+v\n", category)
 
 	err = h.categoryService.Create(&category)
@@ -88,7 +81,7 @@ func (h *categoryHandler) Create(c *gin.Context) {
 func (h *categoryHandler) List(c *gin.Context) {
 	var input dto.ListRequest
 	if err := c.ShouldBindQuery(&input); err != nil {
-        if errList := server_errors.AsValidatorError(err); errList != nil {
+		if errList := server_errors.AsValidatorError(err); errList != nil {
 			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
 			return
 		}

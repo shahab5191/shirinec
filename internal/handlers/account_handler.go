@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -90,11 +89,7 @@ func (h *accountHandler) List(c *gin.Context) {
 
 	items, err := h.accountService.List(context.Background(), input.Page, input.Size, userID)
 	if err != nil {
-		if sErr, ok := err.(*server_errors.SError); ok {
-			c.JSON(sErr.Unwrap())
-		}
-		log.Printf("[Error] - accountHandler.List - impossible error: %+v\n", err)
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -118,12 +113,7 @@ func (h *accountHandler) GetByID(c *gin.Context) {
 
 	item, err := h.accountService.GetByID(context.Background(), id, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-		log.Printf("[Error] - accountHandler.GetByID - impossible Error!: %+v\n", err)
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -147,13 +137,7 @@ func (h *accountHandler) Delete(c *gin.Context) {
 
 	err = h.accountService.Delete(context.Background(), id, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(sErr.Unwrap())
-			return
-		}
-		log.Printf("[Error] - accountService.Delete - Impossible error: %+v\n", err)
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
@@ -187,12 +171,7 @@ func (h *accountHandler) Update(c *gin.Context) {
 
 	item, err := h.accountService.Update(context.Background(), &input, id, userID)
 	if err != nil {
-		var sErr *server_errors.SError
-		if errors.As(err, &sErr) {
-			c.JSON(err.(*server_errors.SError).Unwrap())
-			return
-		}
-		c.JSON(server_errors.InternalError.Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 

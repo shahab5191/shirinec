@@ -139,6 +139,7 @@ func (h *userHandler) SignupVerification(c *gin.Context) {
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
+        log.Printf("[Error] - userHandler.SignupVerification - Parsing user_id to uuid: %+v\n", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
@@ -150,6 +151,7 @@ func (h *userHandler) SignupVerification(c *gin.Context) {
 			c.JSON(sErr.Unwrap())
 			return
 		}
+        log.Printf("[Error] - userHandler.SignupVerification - Calling userService.SignupVerification: %+v\n", err)
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}
