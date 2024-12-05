@@ -4,15 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"math"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
+	"shirinec.com/internal/utils"
 )
 
 type ItemService interface {
@@ -40,11 +39,10 @@ func (s *itemService) Create(ctx context.Context, input *dto.ItemCreateRequest, 
 
 	err := s.itemRepo.Create(ctx, &item)
 	if err != nil {
-        pgErr := server_errors.AsPgError(err)
-        if pgErr  != nil {
-            return nil, pgErr
-        }
-		log.Printf("[Error] - itemService.Create - Calling itemRepo.Create: %+v\n", err)
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return nil, pgErr
+		}
+		utils.Logger.Errorf("itemService.Create - Calling itemRepo.Create: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -66,15 +64,14 @@ func (s *itemService) List(ctx context.Context, page, size int, userID uuid.UUID
 	response.Pagination.RemainingPages = remainingPages
 
 	if err != nil {
-		log.Printf("[Error] - itemService.List - Calling itemRepo.List: %+v\n", err)
+		utils.Logger.Errorf("itemService.List - Calling itemRepo.List: %s", err.Error())
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
 
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			utils.Logger.Errorf("Error is of type pgconn.PgError: %+v\n", pgErr.Error())
 		}
 
 		return nil, &server_errors.InternalError
@@ -90,7 +87,7 @@ func (s *itemService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*d
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
-		log.Printf("[Error] - itemService.GetByID - Calling itemRepository.GetByID: %+v\n", err)
+		utils.Logger.Errorf("itemService.GetByID - Calling itemRepository.GetByID: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -103,7 +100,7 @@ func (s *itemService) Delete(ctx context.Context, id int, userID uuid.UUID) erro
 		if errors.Is(err, sql.ErrNoRows) {
 			return &server_errors.ItemNotFound
 		}
-		log.Printf("[Error] - itemService.Delete - Calling itemRepo.Delete: %+v\n", err)
+		utils.Logger.Errorf("itemService.Delete - Calling itemRepo.Delete: %s", err.Error())
 		return &server_errors.InternalError
 	}
 
@@ -123,11 +120,10 @@ func (s *itemService) Update(ctx context.Context, input *dto.ItemUpdateRequest, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
-        pgErr := server_errors.AsPgError(err)
-        if pgErr != nil {
-            return nil, pgErr
-        }
-		log.Printf("[Error] - itemService.Update - Calling itemRepo.Update: %+v\n", err)
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return nil, pgErr
+		}
+		utils.Logger.Errorf("itemService.Update - Calling itemRepo.Update: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
