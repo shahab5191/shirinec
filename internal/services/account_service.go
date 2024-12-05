@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"math"
 
 	"github.com/google/uuid"
@@ -12,6 +11,7 @@ import (
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
+	"shirinec.com/internal/utils"
 )
 
 type AccountService interface {
@@ -39,11 +39,11 @@ func (s *accountService) Create(ctx context.Context, input *dto.AccountCreateReq
 
 	err := s.accountRepo.Create(ctx, &item)
 	if err != nil {
-        pgErr := server_errors.AsPgError(err)
-        if pgErr != nil {
-            return nil, pgErr
-        }
-		log.Printf("[Error] - accountService.Create - Calling accountRepo.Create: %+v\n", err)
+		pgErr := server_errors.AsPgError(err)
+		if pgErr != nil {
+			return nil, pgErr
+		}
+		utils.Logger.Errorf("accountService.Create - Calling accountRepo.Create: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -69,12 +69,11 @@ func (s *accountService) List(ctx context.Context, page, size int, userID uuid.U
 			return nil, &server_errors.ItemNotFound
 		}
 
-        pgErr := server_errors.AsPgError(err)
-        if pgErr != nil {
-            return nil, pgErr
-        }
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return nil, pgErr
+		}
 
-		log.Printf("[Error] - accountService.List - Calling accountRepo.List: %+v\n", err)
+		utils.Logger.Errorf("accountService.List - Calling accountRepo.List: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -88,7 +87,7 @@ func (s *accountService) GetByID(ctx context.Context, id int, userID uuid.UUID) 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
-		log.Printf("[Error] - accountService.GetByID - Calling accountRepository.GetByID: %+v\n", err)
+		utils.Logger.Errorf("accountService.GetByID - Calling accountRepository.GetByID: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
@@ -101,7 +100,7 @@ func (s *accountService) Delete(ctx context.Context, id int, userID uuid.UUID) e
 		if errors.Is(err, sql.ErrNoRows) {
 			return &server_errors.ItemNotFound
 		}
-		log.Printf("[Error] - accountService.Delete - Calling accountRepo.Delete: %+v\n", err)
+		utils.Logger.Errorf("accountService.Delete - Calling accountRepo.Delete: %s", err.Error())
 		return &server_errors.InternalError
 	}
 
@@ -122,12 +121,11 @@ func (s *accountService) Update(ctx context.Context, input *dto.AccountUpdateReq
 			return nil, &server_errors.ItemNotFound
 		}
 
-        pgErr := server_errors.AsPgError(err)
-        if pgErr != nil {
-            return nil, pgErr
-        }
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return nil, pgErr
+		}
 
-		log.Printf("[Error] - accountService.Update - Calling accountRepo.Update: %+v\n", err)
+		utils.Logger.Errorf("accountService.Update - Calling accountRepo.Update: %s", err.Error())
 		return nil, &server_errors.InternalError
 	}
 
