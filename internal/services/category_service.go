@@ -13,6 +13,7 @@ import (
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
+	"shirinec.com/internal/utils"
 )
 
 type CategoryService interface {
@@ -70,15 +71,11 @@ func (s *categoryService) ListCategories(userID uuid.UUID, page int, size int) (
 func (s *categoryService) GetByID(userID uuid.UUID, id int) (*models.Category, error) {
 	category, err := s.categoryRepo.GetByID(context.Background(), id, userID)
 	if err != nil {
-		log.Printf("[Error] - CategoryService.GetByID - Getting category from repository: %+v\n", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
 
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
-		}
+        utils.Logger.Errorf("Calling categoryService.GetByID: %s", err.Error())
 		return category, &server_errors.InternalError
 	}
 	return category, nil
@@ -87,15 +84,10 @@ func (s *categoryService) GetByID(userID uuid.UUID, id int) (*models.Category, e
 func (s *categoryService) Delete(userID uuid.UUID, id int) error {
 	err := s.categoryRepo.Delete(context.Background(), id, userID)
 	if err != nil {
-		log.Printf("[Error] - CategoryService.Delete - Getting category from repository: %+v\n", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return &server_errors.ItemNotFound
 		}
-
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			log.Printf("Error is of type pgconn.PgError: %+v\n", pgErr)
-		}
+        utils.Logger.Errorf("Calling categoryService.Delete: %s", err.Error())
 		return &server_errors.InternalError
 	}
 	return nil

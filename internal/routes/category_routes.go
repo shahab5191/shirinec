@@ -10,7 +10,7 @@ func (r *router) setupCategoryRouter() {
 	categoryService := services.NewCategoryService(
 		r.Deps.CategoryRepo,
 	)
-	categoryHandler := handler.NewCategoryHandler(categoryService, r.validatorObj)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
 
 	flags := middlewares.AuthMiddleWareFlags{ShouldBeActive: true}
 
