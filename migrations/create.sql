@@ -236,7 +236,6 @@ BEGIN
         SELECT 1
         FROM media
         WHERE id = NEW.picture_id
-        AND status = 'temp'
         AND user_id = NEW.user_id
     ) THEN
         UPDATE media
@@ -260,7 +259,6 @@ BEGIN
         SELECT 1
         FROM media
         WHERE id = NEW.image_id
-        AND status = 'temp'
         AND user_id = NEW.user_id
     ) THEN
         UPDATE media
@@ -284,7 +282,6 @@ BEGIN
         SELECT 1
         FROM media
         WHERE id = NEW.icon_id
-        AND status = 'temp'
         AND user_id = NEW.user_id
     ) THEN
         UPDATE media
