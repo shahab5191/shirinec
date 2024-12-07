@@ -7,6 +7,8 @@ server:
 database:
   timeout: 5s
   pool_size: 10
+worker:
+  cleanup_threshold: 1m
 services:
   auth:
     access_token_duration: 15m

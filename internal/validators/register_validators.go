@@ -7,12 +7,7 @@ import (
 )
 
 func RegisterValidators(validatorObject *validator.Validate) {
-	err := validatorObject.RegisterValidation("mediaUploadBind", mediaUploadBindValidator)
-	if err != nil {
-		log.Fatalf("[Panic] - RegisterValidators - registering mediaUploadBind")
-	}
-
-	err = validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
+    err := validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
 	if err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering categoryCreateType")
 	}
