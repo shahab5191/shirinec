@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"shirinec.com/config"
-	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
 	"shirinec.com/internal/utils"
@@ -35,17 +34,6 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	var input dto.MediaUploadRequest
-	if err = c.ShouldBindQuery(&input); err != nil {
-        if errList := server_errors.AsValidatorError(err); errList != nil {
-			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
-			return
-		}
-        utils.Logger.Warnf("Undefined error while binding input to dto.MediaUploadRequest: %s", err.Error())
-		c.JSON(server_errors.InvalidInput.Unwrap())
-		return
-	}
-
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
 		utils.Logger.Errorf("mediaHandler.Upload - Parsing uuid from user_id string: %s", err.Error())
@@ -67,7 +55,7 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	media, err := h.mediaService.Create(context.Background(), &input, savePath, userID)
+	media, err := h.mediaService.Create(context.Background(), fileName, userID)
 	if err != nil {
         c.JSON(err.(*server_errors.SError).Unwrap())
 		return

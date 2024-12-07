@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 
 	"shirinec.com/internal/dto"
-	"shirinec.com/internal/enums"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
@@ -18,7 +17,7 @@ import (
 )
 
 type MediaService interface {
-	Create(ctx context.Context, input *dto.MediaUploadRequest, savePath string, userID uuid.UUID) (*dto.MediaUploadResponse, error)
+	Create(ctx context.Context, savePath string, userID uuid.UUID) (*dto.MediaUploadResponse, error)
 }
 
 type mediaService struct {
@@ -35,34 +34,24 @@ func NewMediaService(mediaRepo repositories.MediaRepository, itemRepo repositori
 	}
 }
 
-func (s *mediaService) Create(ctx context.Context, input *dto.MediaUploadRequest, savePath string, userID uuid.UUID) (*dto.MediaUploadResponse, error) {
+func (s *mediaService) Create(ctx context.Context, fileName string, userID uuid.UUID) (*dto.MediaUploadResponse, error) {
 	var media models.Media
 	media.UserID = userID
-	media.FilePath = savePath
+	media.FilePath = fileName
 	currentTime := time.Now().UTC().Truncate(time.Second)
 	media.CreationDate = currentTime
 	media.UpdateDate = currentTime
-	url := fmt.Sprintf("/file/%s-%s", input.BindsTo, uuid.New().String())
+	url := fmt.Sprintf("/file/media-%s", uuid.New().String())
 	media.Url = url
 
-	var err error
-	switch input.BindsTo {
-	case enums.BindToItem:
-		err = s.mediaRepo.CreateForEntity(ctx, "items", "image_id", &media, input.BindID)
-	case enums.BindToCategory:
-		err = s.mediaRepo.CreateForEntity(ctx, "categories", "icon_id", &media, input.BindID)
-	case enums.BindToProfile:
-		err = s.mediaRepo.CreateForProfile(ctx, &media)
-	}
-
-	if err != nil {
+    if err := s.mediaRepo.Create(ctx, &media); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
 		}
 
-        utils.Logger.Errorf("mediaService.Create - Calling mediaRepo.CreateFor%s: %s", input.BindsTo, err.Error())
+        utils.Logger.Errorf("mediaService.Create - Calling mediaRepo.CreateFor: %s", err.Error())
 		return nil, &server_errors.InternalError
-	}
+    }
 
 	var mediaResponse *dto.MediaUploadResponse = &dto.MediaUploadResponse{
 		ID:           media.ID,

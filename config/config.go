@@ -11,19 +11,20 @@ import (
 )
 
 type Config struct {
-	AppName              string
-	Port                 int
-	Env                  string
-	DatabaseURL          string
-	JWTSecret            string
-	JWTRefreshSecret     string
-	PoolSize             int
-	Timeout              time.Duration
-	AccessTokenDuration  time.Duration
-	RefreshTokenDuration time.Duration
-	RedisURL             string
-	UploadFolder         string
-	SqlFolder            string
+	AppName               string
+	Port                  int
+	Env                   string
+	DatabaseURL           string
+	JWTSecret             string
+	JWTRefreshSecret      string
+	PoolSize              int
+	Timeout               time.Duration
+	AccessTokenDuration   time.Duration
+	RefreshTokenDuration  time.Duration
+	RedisURL              string
+	UploadFolder          string
+	SqlFolder             string
+	MediaCleanupThreshold time.Duration
 }
 
 var AppConfig *Config
@@ -47,6 +48,7 @@ func Load() {
 	viper.SetDefault("RefreshTokenDuration", 168*time.Hour)
 	viper.SetDefault("UploadFolder", "./upload")
 	viper.SetDefault("SqlFolder", "./internal/db/sql")
+	viper.SetDefault("MediaCleanupThreshold", 60*time.Minute)
 
 	viper.AutomaticEnv()
 
@@ -55,19 +57,20 @@ func Load() {
 	}
 
 	AppConfig = &Config{
-		AppName:              viper.GetString("AppName"),
-		Port:                 viper.GetInt("server.port"),
-		Env:                  viper.GetString("server.env"),
-		PoolSize:             viper.GetInt("database.pool_size"),
-		Timeout:              viper.GetDuration("database.timeout"),
-		DatabaseURL:          getEnvOrDefault("DATABASE_URL", ""),
-		JWTSecret:            getEnvOrDefault("JWT_SECRET", ""),
-		JWTRefreshSecret:     getEnvOrDefault("JWT_REFRESH_SECRET", ""),
-		AccessTokenDuration:  viper.GetDuration("services.auth.access_token_duration"),
-		RefreshTokenDuration: viper.GetDuration("services.auth.refresh_token_duration"),
-		RedisURL:             getEnvOrDefault("REDIS_URL", ""),
-		UploadFolder:         viper.GetString("server.upload_folder"),
-		SqlFolder:            viper.GetString("server.sql_folder"),
+		AppName:               viper.GetString("AppName"),
+		Port:                  viper.GetInt("server.port"),
+		Env:                   viper.GetString("server.env"),
+		PoolSize:              viper.GetInt("database.pool_size"),
+		Timeout:               viper.GetDuration("database.timeout"),
+		DatabaseURL:           getEnvOrDefault("DATABASE_URL", ""),
+		JWTSecret:             getEnvOrDefault("JWT_SECRET", ""),
+		JWTRefreshSecret:      getEnvOrDefault("JWT_REFRESH_SECRET", ""),
+		AccessTokenDuration:   viper.GetDuration("services.auth.access_token_duration"),
+		RefreshTokenDuration:  viper.GetDuration("services.auth.refresh_token_duration"),
+		RedisURL:              getEnvOrDefault("REDIS_URL", ""),
+		UploadFolder:          viper.GetString("server.upload_folder"),
+		SqlFolder:             viper.GetString("server.sql_folder"),
+		MediaCleanupThreshold: viper.GetDuration("worker.cleanup_threshold"),
 	}
 	println(viper.GetInt("database.pool_size"))
 

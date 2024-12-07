@@ -7,6 +7,6 @@ import (
 type MediaAssosiation struct {
 	ID          int                   `json:"id"`
 	MediaID     int                   `json:"mediaID"`
-	BindingType enums.MediaUploadBind `json:"bindingType"`
+	BindingType enums.MediaBindType `json:"bindingType"`
 	BindingID   int                   `json:"bindingID"`
 }

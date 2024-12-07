@@ -18,10 +18,17 @@ const (
 	StatusPending  UserStatus = "pending"
 )
 
-type MediaUploadBind string
+type MediaStatus string
 
 const (
-	BindToItem     MediaUploadBind = "item"
-	BindToProfile  MediaUploadBind = "profile"
-	BindToCategory MediaUploadBind = "category"
+	MediaStatusTemp     MediaStatus = "temp"
+	MediaStatusAttached MediaStatus = "attached"
+	MediaStatusRemoved  MediaStatus = "removed"
+)
+
+type MediaBindType  string
+
+const (
+    MediaBindItem MediaBindType = "item"
+    MediaBindTransaction MediaBindType = "transaction"
 )

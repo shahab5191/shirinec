@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"strconv"
 
@@ -15,6 +16,7 @@ import (
 	"shirinec.com/internal/routes"
 	"shirinec.com/internal/utils"
 	"shirinec.com/internal/validators"
+	"shirinec.com/internal/workers"
 )
 
 func main() {
@@ -48,11 +50,15 @@ func main() {
 
 	utils.InitLogger()
 
-
 	ginEngine := gin.Default()
 
 	router := routes.NewRouter(ginEngine, &deps, database.Pool)
 	router.SetupRouter()
+
+    cleanupWorker := workers.NewMediaCleanupWorker(&mediaRepo)
+    ginEngine.GET("/clean", func (c *gin.Context){
+        cleanupWorker.CleanupUnusedImages(context.Background())
+    })
 
 	for _, route := range ginEngine.Routes() {
 		log.Println(route.Method, route.Path)

@@ -2,18 +2,18 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/models"
+	"shirinec.com/internal/utils"
 )
 
 type MediaRepository interface {
 	Create(ctx context.Context, media *models.Media) error
-	CreateForEntity(ctx context.Context, entityTableName string, entityColumn string, media *models.Media, itemID int) error
-	CreateForProfile(ctx context.Context, media *models.Media) error
+	ListForCleanUp(ctx context.Context, threshold string) ([]string, error)
+	DeleteRemovedMedia(ctx context.Context) error
 }
 
 type mediaRepository struct {
@@ -36,75 +36,43 @@ func (r *mediaRepository) Create(ctx context.Context, media *models.Media) error
 	return err
 }
 
-func (r *mediaRepository) CreateForEntity(ctx context.Context, entityTableName string, entityColumn string, media *models.Media, itemID int) error {
-	queryFormat := "INSERT INTO %s (url, file_path, user_id, metadata, creation_date, update_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
-	query := fmt.Sprintf(queryFormat, r.tableName)
+func (r *mediaRepository) ListForCleanUp(ctx context.Context, threshold string) ([]string, error) {
 
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		log.Printf("[Error] - mediaRepository - Begining Transaction: %+v\n", err)
-		return err
-	}
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil && err != sql.ErrTxDone {
-			log.Printf("tx.Rollback failed: %v", err)
-		}
-	}()
-
-	err = tx.QueryRow(ctx, query, &media.Url, &media.FilePath, &media.UserID, &media.Metadata, &media.CreationDate, &media.UpdateDate).Scan(&media.ID)
-	if err != nil {
-		return err
-	}
-
-	updateEntityQueryFormat := "UPDATE %s SET %s = $1 WHERE id = $2 AND user_id = $3 RETURNING id"
-	updateEntityQuery := fmt.Sprintf(updateEntityQueryFormat, entityTableName, entityColumn)
-	log.Println(updateEntityQuery)
-	commandTag, err := tx.Exec(ctx, updateEntityQuery, &media.ID, &itemID, &media.UserID)
-	if err != nil {
-		return err
-	}
-
-	if commandTag.RowsAffected() != 1 {
-		return sql.ErrNoRows
-	}
-
-	err = tx.Commit(ctx)
-	return err
-}
-
-func (r *mediaRepository) CreateForProfile(ctx context.Context, media *models.Media) error {
-	queryFormat := "INSERT INTO %s (url, file_path, user_id, metadata, creation_date, update_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
-	query := fmt.Sprintf(queryFormat, r.tableName)
-
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		log.Printf("[Error] - mediaRepository - Begining Transaction: %+v\n", err)
-		return err
-	}
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil && err != sql.ErrTxDone {
-			log.Printf("tx.Rollback failed: %v", err)
-		}
-	}()
-
-	err = tx.QueryRow(ctx, query, &media.Url, &media.FilePath, &media.UserID, &media.Metadata, &media.CreationDate, &media.UpdateDate).Scan(&media.ID)
-	if err != nil {
-		return err
-	}
-
-	updateProfileQuery := `
-        UPDATE profiles
-        SET picture_id = $1
-        WHERE id = (SELECT profile_id FROM users WHERE id = $2 AND profile_id IS NOT NULL)
-        RETURNING id
+	queryList := `
+        UPDATE media
+        SET status = 'removed'
+        WHERE status = 'temp'
+        AND creation_date <= NOW() - $1::interval
+        RETURNING file_path;
     `
 
-	var profileID int
-	err = tx.QueryRow(ctx, updateProfileQuery, &media.ID, &media.UserID).Scan(&profileID)
+	rows, err := r.db.Query(ctx, queryList, threshold)
 	if err != nil {
-		return err
+		return nil, err
+	}
+    defer rows.Close()
+
+	var list []string
+	for rows.Next() {
+        utils.Logger.Info("row")
+		var fileName string
+		err := rows.Scan(&fileName)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, fileName)
 	}
 
-	err = tx.Commit(ctx)
-	return err
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+	return list, nil
+}
+
+func (r *mediaRepository) DeleteRemovedMedia(ctx context.Context) error {
+	query := "DELETE FROM media WHERE status = 'removed'"
+	if _, err := r.db.Exec(ctx, query); err != nil {
+		return err
+	}
+	return nil
 }
