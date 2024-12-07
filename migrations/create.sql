@@ -244,7 +244,7 @@ BEGIN
         WHERE id = NEW.picture_id;
     ELSE 
         RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.icon_id
-            USING ERRCODE = '23503';
+            USING ERRCODE = 'S0002';
     END IF;
     RETURN NEW;
 END;
@@ -268,7 +268,7 @@ BEGIN
         WHERE id = NEW.image_id;
     ELSE
         RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.image_id
-            USING ERRCODE = '23503';
+            USING ERRCODE = 'S0002';
     END IF;
     RETURN NEW;
 END;
@@ -292,7 +292,7 @@ BEGIN
         WHERE id = NEW.icon_id;
     ELSE 
         RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.icon_id
-            USING ERRCODE = '23503';
+            USING ERRCODE = 'S0002';
     END IF;
     RETURN NEW;
 END;
