@@ -98,12 +98,14 @@ func (s *authService) Login(email, password, ip string) (*dto.AuthLoginResponse,
 	user, err := s.userRepo.GetByEmail(context.Background(), email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			utils.Logger.Infof("authService.Login - Calling userRepo.GetByEmail - No rows error for email: %s", email)
 			return &res, &server_errors.CredentialError
 		}
 		utils.Logger.Errorf("authService.Login - Calling userRepo.GetByEmail: %s", err.Error())
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		utils.Logger.Infof("authService.Login - Calling bcrypt.CompareHashAndPassword: %s", err.Error())
 		return nil, &server_errors.CredentialError
 	}
 

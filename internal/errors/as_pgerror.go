@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	PGForeignKeyViolation = "23503"
-	PGExceptionDefault    = "P0001"
-	PGCategoryNotFound    = "S0001"
+	PGForeignKeyViolation  = "23503"
+	PGExceptionDefault     = "P0001"
+	PGCategoryNotFound     = "S0001"
+	PGInvalidMediaRefrence = "S0002"
 )
 
 func AsPgError(err error) error {
@@ -23,8 +24,10 @@ func AsPgError(err error) error {
 			return &InvalidRefrencedEntity
 		case PGCategoryNotFound:
 			return &CategoryNotFound
-        default:
-            log.Printf("Undefined Postgresql error: %s", pgErr.Error())
+        case PGInvalidMediaRefrence:
+            return &InvalidMediaRefrence
+		default:
+			log.Printf("Undefined Postgresql error: %s", pgErr.Error())
 		}
 	}
 	return nil

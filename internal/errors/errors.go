@@ -44,7 +44,8 @@ var (
 	FileRequired               = SError{Code: http.StatusBadRequest, Message: "File is required", ErrorCode: 115}
 	InvalidFileFormat          = SError{Code: http.StatusBadRequest, Message: "Only .png, .jpg and .jpeg files are allowed", ErrorCode: 116}
 	CategoryNotFound           = SError{Code: http.StatusBadRequest, Message: "Requested category was not found!", ErrorCode: 117}
-	InvalidRefrencedEntity     = SError{Code: http.StatusBadRequest, Message: "Request contains refrence to and entity that does not exists", ErrorCode: 118}
+	InvalidRefrencedEntity     = SError{Code: http.StatusBadRequest, Message: "Request refrence field error", ErrorCode: 118}
+	InvalidMediaRefrence       = SError{Code: http.StatusBadRequest, Message: "Request media field is invalid", ErrorCode: 118}
 )
 
 func ValidationErrorBuilder(errList *[]string) *SError {
