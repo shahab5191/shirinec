@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
 DROP TABLE IF EXISTS media CASCADE;
-DROP TABLE IF EXISTS media_bindings;
+DROP TABLE IF EXISTS media_transaction;
 DROP TABLE IF EXISTS items CASCADE;
 DROP TABLE IF EXISTS purchase_list_items;
 DROP TABLE IF EXISTS account_access;
@@ -15,8 +15,8 @@ DROP TYPE IF EXISTS UserStatus;
 DROP TYPE IF EXISTS UserRole;
 DROP TYPE IF EXISTS TransactionType;
 DROP TYPE IF EXISTS CategoryEntityType;
-DROP TYPE IF EXISTS MediaBind CASCADE;
 DROP TYPE IF EXISTS AccessLevel CASCADE;
+DROP TYPE IF EXISTS MediaStatus CASCADE;
 
 CREATE TYPE UserStatus AS ENUM ('banned', 'verified', 'disabled', 'locked', 'pending');
 
@@ -26,9 +26,9 @@ CREATE TYPE TransactionType AS ENUM ('income', 'expense', 'transfer');
 
 CREATE TYPE CategoryEntityType AS ENUM ('income', 'expense', 'account');
 
-CREATE TYPE MediaBind AS ENUM ('item', 'transaction');
-
 CREATE TYPE AccessLevel AS ENUM ('view', 'edit', 'all');
+
+CREATE TYPE MediaStatus AS ENUM ('temp', 'attached', 'removed');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -59,7 +59,8 @@ CREATE TABLE media (
     url TEXT NOT NULL,
     file_path TEXT NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
-    metadata JSON,
+    metadata TEXT,
+    status MediaStatus NOT NULL DEFAULT 'temp',
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -70,7 +71,7 @@ CREATE TABLE categories (
     name VARCHAR(255) NOT NULL,
     color VARCHAR(7) NOT NULL CHECK (color ~ '^#[0-9a-fA-F]{6}$'),
     icon_id INT REFERENCES media(id),
-entity_type CategoryEntityType NOT NULL,
+    entity_type CategoryEntityType NOT NULL,
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -119,11 +120,10 @@ CREATE TABLE purchase_list_items (
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE media_bindings (
+CREATE TABLE media_transaction (
     id SERIAL PRIMARY KEY,
     media_id INT NOT NULL REFERENCES media(id),
-    bind_type MediaBind NOT NULL,
-    bind_id INT NOT NULL
+    transaction_id INT NOT NULL REFERENCES transactions(id)
 );
 
 CREATE TABLE financial_groups (
@@ -164,9 +164,10 @@ BEGIN
         SELECT 1
         FROM categories
         WHERE id = NEW.category_id
-            AND entity_type IN ('Income', 'Expense')
+            AND entity_type = 'expense'
     ) THEN
-        RAISE EXCEPTION 'Invalid category_id: must reference a category with entity_type Income or Expense';
+        RAISE EXCEPTION 'Invalid category_id: must reference a category with entity_type Income'
+            USING ERRCODE = 'S0001';
     END IF;
     RETURN NEW;
 END;
@@ -179,9 +180,10 @@ BEGIN
         SELECT 1
         FROM categories
         WHERE id = NEW.category_id
-            AND entity_type = 'Account'
+            AND entity_type = 'account'
     ) THEN
-        RAISE EXCEPTION 'Invalid category_id: must reference a category with entity_type Account';
+        RAISE EXCEPTION 'Invalid category_id: must reference a category with entity_type Account'
+            USING ERRCODE = 'S0001';
     END IF;
     RETURN NEW;
 END;
@@ -200,14 +202,13 @@ EXECUTE FUNCTION check_account_category();
 CREATE OR REPLACE FUNCTION update_date_on_change()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT (NEW IS DISTINCT FROM OLD) THEN
-        RETURN NULL;
+    IF NEW IS DISTINCT FROM OLD THEN
+        NEW.update_date := CURRENT_TIMESTAMP;
     END IF;
-
-    NEW.update_date := CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
@@ -227,3 +228,75 @@ CREATE TRIGGER update_date_trigger BEFORE UPDATE ON purchase_list_items
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON account_access
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+
+CREATE OR REPLACE FUNCTION update_profile_picture_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS(
+        SELECT 1
+        FROM media
+        WHERE id = NEW.picture_id
+        AND status = 'temp'
+        AND user_id = NEW.user_id
+    ) THEN
+        UPDATE media
+        SET status = 'attached'
+        WHERE id = NEW.picture_id;
+    ELSE 
+        RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.icon_id
+            USING ERRCODE = '23503';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_profile_picture_on_change BEFORE UPDATE ON profiles
+    FOR EACH ROW EXECUTE PROCEDURE update_profile_picture_check();
+
+CREATE OR REPLACE FUNCTION update_item_image_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS(
+        SELECT 1
+        FROM media
+        WHERE id = NEW.image_id
+        AND status = 'temp'
+        AND user_id = NEW.user_id
+    ) THEN
+        UPDATE media
+        SET status = 'attached'
+        WHERE id = NEW.image_id;
+    ELSE
+        RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.image_id
+            USING ERRCODE = '23503';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_item_image_on_change BEFORE UPDATE ON items
+    FOR EACH ROW EXECUTE PROCEDURE update_item_image_check();
+
+CREATE OR REPLACE FUNCTION update_category_icon_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS(
+        SELECT 1
+        FROM media
+        WHERE id = NEW.icon_id
+        AND status = 'temp'
+        AND user_id = NEW.user_id
+    ) THEN
+        UPDATE media
+        SET status = 'attached'
+        WHERE id = NEW.icon_id;
+    ELSE 
+        RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.icon_id
+            USING ERRCODE = '23503';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_category_icon_on_change BEFORE UPDATE ON categories
+    FOR EACH ROW EXECUTE PROCEDURE update_category_icon_check();

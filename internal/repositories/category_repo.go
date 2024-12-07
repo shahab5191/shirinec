@@ -128,7 +128,7 @@ func (r *categoryRepository) Update(ctx context.Context, category *models.Catego
 		category.ID,
 		category.UserID,
 	)
-    
+
 	err := r.db.QueryRow(ctx, query, args...).Scan(&category.ID)
 	return err
 }

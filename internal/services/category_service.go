@@ -96,21 +96,22 @@ func (s *categoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.Cat
 	category.UserID = *userID
 	category.Color = categoryDTO.Color
 	category.Name = categoryDTO.Name
+	category.IconID = categoryDTO.IconID
 
 	err := s.categoryRepo.Update(context.Background(), &category)
 	if err != nil {
-		utils.Logger.Errorf("CategoryService.Update - Getting category from repository: %s", err.Error())
 		var sError *server_errors.SError
 		if errors.As(err, &sError) {
-			return nil, err
+			return nil, sError
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			utils.Logger.Errorf("Item was not found!")
 			return &category, &server_errors.ItemNotFound
 		}
 
 		if pgErr := server_errors.AsPgError(err); pgErr != nil {
 			utils.Logger.Errorf("Error is of type pgconn.PgError: %s", pgErr.Error())
+		} else {
+			utils.Logger.Errorf("CategoryService.Update - Getting category from repository: %s", err.Error())
 		}
 		return &category, &server_errors.InternalError
 	}
