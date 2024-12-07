@@ -7,7 +7,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/models"
-	"shirinec.com/internal/utils"
 )
 
 type MediaRepository interface {
@@ -54,7 +53,6 @@ func (r *mediaRepository) ListForCleanUp(ctx context.Context, threshold string) 
 
 	var list []string
 	for rows.Next() {
-        utils.Logger.Info("row")
 		var fileName string
 		err := rows.Scan(&fileName)
 		if err != nil {

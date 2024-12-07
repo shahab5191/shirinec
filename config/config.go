@@ -24,7 +24,8 @@ type Config struct {
 	RedisURL              string
 	UploadFolder          string
 	SqlFolder             string
-	MediaCleanupThreshold time.Duration
+	MediaCleanerThreshold time.Duration
+	MediaCleanerInterval  string
 }
 
 var AppConfig *Config
@@ -48,7 +49,8 @@ func Load() {
 	viper.SetDefault("RefreshTokenDuration", 168*time.Hour)
 	viper.SetDefault("UploadFolder", "./upload")
 	viper.SetDefault("SqlFolder", "./internal/db/sql")
-	viper.SetDefault("MediaCleanupThreshold", 60*time.Minute)
+	viper.SetDefault("MediaCleanerThreshold", 60*time.Minute)
+	viper.SetDefault("MediaCleanerInterval", "60m")
 
 	viper.AutomaticEnv()
 
@@ -70,7 +72,8 @@ func Load() {
 		RedisURL:              getEnvOrDefault("REDIS_URL", ""),
 		UploadFolder:          viper.GetString("server.upload_folder"),
 		SqlFolder:             viper.GetString("server.sql_folder"),
-		MediaCleanupThreshold: viper.GetDuration("worker.cleanup_threshold"),
+		MediaCleanerThreshold: viper.GetDuration("worker.media_cleaner_threshold"),
+		MediaCleanerInterval:  viper.GetString("worker.media_cleaner_interval"),
 	}
 	println(viper.GetInt("database.pool_size"))
 
