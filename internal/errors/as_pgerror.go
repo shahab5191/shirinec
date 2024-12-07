@@ -20,7 +20,7 @@ func AsPgError(err error) error {
 		case PGExceptionDefault:
 			return &InvalidInput
 		case PGForeignKeyViolation:
-			return &InvalidInput
+			return &InvalidRefrencedEntity
 		case PGCategoryNotFound:
 			return &CategoryNotFound
         default:

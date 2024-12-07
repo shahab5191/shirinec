@@ -56,7 +56,7 @@ func (s *categoryService) ListCategories(userID uuid.UUID, page int, size int) (
 		}
 
 		if pgErr := server_errors.AsPgError(err); pgErr != nil {
-			utils.Logger.Errorf("Error is of type pgconn.PgError: %s", pgErr.Error())
+            return nil, pgErr
 		}
 
 		return &response, &server_errors.InternalError
@@ -108,11 +108,11 @@ func (s *categoryService) Update(userID *uuid.UUID, id int, categoryDTO *dto.Cat
 			return &category, &server_errors.ItemNotFound
 		}
 
-		if pgErr := server_errors.AsPgError(err); pgErr != nil {
-			utils.Logger.Errorf("Error is of type pgconn.PgError: %s", pgErr.Error())
-		} else {
-			utils.Logger.Errorf("CategoryService.Update - Getting category from repository: %s", err.Error())
+        if pgErr := server_errors.AsPgError(err); pgErr != nil {
+            return nil, pgErr
 		}
+
+        utils.Logger.Errorf("CategoryService.Update - Getting category from repository: %s", err.Error())
 		return &category, &server_errors.InternalError
 	}
 	return &category, nil
