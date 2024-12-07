@@ -9,7 +9,7 @@ import (
 )
 
 type MediaCleanupWorker interface {
-	CleanupUnusedImages(ctx context.Context)
+	CleanupUnusedImages()
 }
 
 type mediaCleanupWorker struct {
@@ -20,11 +20,11 @@ func NewMediaCleanupWorker(mediaRepo *repositories.MediaRepository) MediaCleanup
 	return &mediaCleanupWorker{mediaRepo: *mediaRepo}
 }
 
-func (w *mediaCleanupWorker) CleanupUnusedImages(ctx context.Context) {
+func (w *mediaCleanupWorker) CleanupUnusedImages() {
     utils.Logger.Info("Starting media cleaner worker...")
-	threshold := utils.DurationToPostgresqlInterval(config.AppConfig.MediaCleanupThreshold)
+	threshold := utils.DurationToPostgresqlInterval(config.AppConfig.MediaCleanerThreshold)
 
-	mediaList, err := w.mediaRepo.ListForCleanUp(ctx, threshold)
+	mediaList, err := w.mediaRepo.ListForCleanUp(context.Background(), threshold)
 	if err != nil {
 		utils.Logger.Errorf("mediaCleanupWorker.CleanupUnusedImages - Calling mediaRepo.ListForCleanup: %s", err.Error())
         return
@@ -39,7 +39,7 @@ func (w *mediaCleanupWorker) CleanupUnusedImages(ctx context.Context) {
     }
     utils.Logger.Info("Listed medias removed from disk")
 
-    if err := w.mediaRepo.DeleteRemovedMedia(ctx); err != nil {
+    if err := w.mediaRepo.DeleteRemovedMedia(context.Background()); err != nil {
         utils.Logger.Errorf("mediaCleanupWorker.CleanupUnusedImages - Calling mediaRepo.DeleteRemovedMedia: %s", err.Error())
     }
     utils.Logger.Info("Finished media cleaner worker process")

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"strconv"
 
@@ -55,10 +54,7 @@ func main() {
 	router := routes.NewRouter(ginEngine, &deps, database.Pool)
 	router.SetupRouter()
 
-    cleanupWorker := workers.NewMediaCleanupWorker(&mediaRepo)
-    ginEngine.GET("/clean", func (c *gin.Context){
-        cleanupWorker.CleanupUnusedImages(context.Background())
-    })
+	workers.ScheduleWorkers(mediaRepo)
 
 	for _, route := range ginEngine.Routes() {
 		log.Println(route.Method, route.Path)

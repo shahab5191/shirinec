@@ -8,7 +8,8 @@ database:
   timeout: 5s
   pool_size: 10
 worker:
-  cleanup_threshold: 1m
+  media_cleaner_threshold: 60m
+  media_cleaner_interval: 60m
 services:
   auth:
     access_token_duration: 15m
