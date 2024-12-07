@@ -51,14 +51,14 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *userRepository) Login(ctx context.Context, ip string) error{
     query := "UPDATE users SET last_login = $1, ip = $2 RETURNING id"
-    var id int
+    var id uuid.UUID
     currentTime := time.Now().UTC().Truncate(time.Second)
     err := r.db.QueryRow(ctx, query, &currentTime, &ip).Scan(&id)
     return err
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := "SELECT id, email, ip, password, last_login, failed_tries, status, creation_date, update_date, profile_id, last_password_change FROM users WHERE users.email = $1 LIMIT 1"
+	query := "SELECT id, email, ip, password, last_login, failed_tries, status, creation_date, update_date, profile_id, last_password_change FROM users WHERE email = $1"
 	var user models.User
 	err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.IP, &user.Password, &user.LastLogin, &user.FailedTries, &user.Status, &user.CreationDate, &user.UpdateDate, &user.ProfileID, &user.LastPasswordChange)
 	return &user, err
