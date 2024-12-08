@@ -26,9 +26,17 @@ const (
 	MediaStatusRemoved  MediaStatus = "removed"
 )
 
-type MediaBindType  string
+type MediaBindType string
 
 const (
-    MediaBindItem MediaBindType = "item"
-    MediaBindTransaction MediaBindType = "transaction"
+	MediaBindItem        MediaBindType = "item"
+	MediaBindTransaction MediaBindType = "transaction"
+)
+
+type MediaAccess string
+
+const (
+	Owner  MediaAccess = "owner"
+	Group  MediaAccess = "group"
+	Public MediaAccess = "public"
 )

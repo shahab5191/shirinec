@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"shirinec.com/config"
+	"shirinec.com/internal/dto"
+	"shirinec.com/internal/enums"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
 	"shirinec.com/internal/utils"
@@ -16,6 +18,8 @@ import (
 
 type MediaHandler interface {
 	Upload(c *gin.Context)
+	GetMedia(c *gin.Context)
+	UpdateMedia(c *gin.Context)
 }
 
 type mediaHandler struct {
@@ -29,8 +33,14 @@ func NewMediaHandler(mediaService services.MediaService) MediaHandler {
 func (h *mediaHandler) Upload(c *gin.Context) {
 	file, err := c.FormFile("image")
 	if err != nil {
-		utils.Logger.Errorf("Calling c.FormFile: %s", err.Error())
 		c.JSON(server_errors.FileRequired.Unwrap())
+		return
+	}
+
+	var input dto.MediaUploadQuery
+	input.Access = enums.Owner
+	if err := c.ShouldBindQuery(&input); err != nil {
+		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
@@ -55,11 +65,32 @@ func (h *mediaHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	media, err := h.mediaService.Create(context.Background(), fileName, userID)
+	media, err := h.mediaService.Create(context.Background(), fileName, userID, &input)
 	if err != nil {
-        c.JSON(err.(*server_errors.SError).Unwrap())
+		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}
 
 	c.JSON(http.StatusOK, media)
+}
+
+func (h *mediaHandler) GetMedia(c *gin.Context) {
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		utils.Logger.Errorf("mediaHandler.GetMedia - Parsing uuid from user_id string: %s", err.Error())
+		return
+	}
+
+	mediaName := c.Param("fileName")
+	mediaPath, err := h.mediaService.GetMedia(context.Background(), mediaName, userID)
+	if err != nil {
+		c.JSON(err.(*server_errors.SError).Unwrap())
+		return
+	}
+
+	c.File(mediaPath)
+}
+
+func (h *mediaHandler) UpdateMedia(c *gin.Context) {
+
 }

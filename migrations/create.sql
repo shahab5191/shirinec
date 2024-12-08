@@ -17,6 +17,7 @@ DROP TYPE IF EXISTS TransactionType;
 DROP TYPE IF EXISTS CategoryEntityType;
 DROP TYPE IF EXISTS AccessLevel CASCADE;
 DROP TYPE IF EXISTS MediaStatus CASCADE;
+DROP TYPE IF EXISTS MediaAccess;
 
 CREATE TYPE UserStatus AS ENUM ('banned', 'verified', 'disabled', 'locked', 'pending');
 
@@ -29,6 +30,8 @@ CREATE TYPE CategoryEntityType AS ENUM ('income', 'expense', 'account');
 CREATE TYPE AccessLevel AS ENUM ('view', 'edit', 'all');
 
 CREATE TYPE MediaStatus AS ENUM ('temp', 'attached', 'removed');
+
+CREATE TYPE MediaAccess AS ENUM ('owner', 'group', 'public');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -61,6 +64,8 @@ CREATE TABLE media (
     user_id UUID NOT NULL REFERENCES users(id),
     metadata TEXT,
     status MediaStatus NOT NULL DEFAULT 'temp',
+    financial_group_id INT NOT NULL,
+    access MediaAccess NOT NULL DEFAULT 'owner',
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -152,10 +157,12 @@ CREATE TABLE account_access (
 ALTER TABLE media DROP CONSTRAINT IF EXISTS fk_user_id;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_profile_id;
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS fk_picture_id;
+ALTER TABLE media DROP CONSTRAINT IF EXISTS fk_financial_group_id;
 
 ALTER TABLE media ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users ADD CONSTRAINT fk_profile_id FOREIGN KEY (profile_id) REFERENCES profiles(id);
 ALTER TABLE profiles ADD CONSTRAINT fk_picture_id FOREIGN KEY (picture_id) REFERENCES media(id);
+ALTER TABLE media ADD CONSTRAINT fk_financial_group_id FOREIGN KEY (financial_group_id) REFERENCES financial_groups(id);
 
 CREATE OR REPLACE FUNCTION check_item_category()
 RETURNS TRIGGER AS $$

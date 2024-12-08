@@ -17,4 +17,6 @@ func (r *router) setupMediaRouter() {
 	authMiddleware := middlewares.AuthMiddleWare(flags, r.db)
 
 	r.GinEngine.POST("/media/upload", authMiddleware, mediaHandler.Upload)
+    r.GinEngine.GET("/file/:fileName", authMiddleware, mediaHandler.GetMedia)
+    r.GinEngine.POST("/file/:fileName", authMiddleware, mediaHandler.UpdateMedia)
 }
