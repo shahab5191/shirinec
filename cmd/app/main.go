@@ -34,17 +34,19 @@ func main() {
 	itemRepo := repositories.NewItemRepository(database.Pool)
 	accountRepo := repositories.NewAccountRepository(database.Pool)
 	mediaRepo := repositories.NewMediaRepository(database.Pool)
+	financialGroupRepo := repositories.NewFinancialGroupRepository(database.Pool)
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		validators.RegisterValidators(v)
 	}
 
 	deps := handler.Dependencies{
-		UserRepo:     userRepo,
-		CategoryRepo: categoryRepo,
-		ItemRepo:     itemRepo,
-		AccountRepo:  accountRepo,
-		MediaRepo:    mediaRepo,
+		UserRepo:           userRepo,
+		CategoryRepo:       categoryRepo,
+		ItemRepo:           itemRepo,
+		AccountRepo:        accountRepo,
+		MediaRepo:          mediaRepo,
+		FinancialGroupRepo: financialGroupRepo,
 	}
 
 	utils.InitLogger()
