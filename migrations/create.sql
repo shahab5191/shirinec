@@ -134,6 +134,7 @@ CREATE TABLE media_transaction (
 CREATE TABLE financial_groups (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    image_id INT REFERENCES media(id),
     user_id UUID NOT NULL REFERENCES users(id),
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -158,11 +159,13 @@ ALTER TABLE media DROP CONSTRAINT IF EXISTS fk_user_id;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_profile_id;
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS fk_picture_id;
 ALTER TABLE media DROP CONSTRAINT IF EXISTS fk_financial_group_id;
+ALTER TABLE financial_groups DROP CONSTRAINT IF EXISTS fk_fg_image_id;
 
 ALTER TABLE media ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE users ADD CONSTRAINT fk_profile_id FOREIGN KEY (profile_id) REFERENCES profiles(id);
 ALTER TABLE profiles ADD CONSTRAINT fk_picture_id FOREIGN KEY (picture_id) REFERENCES media(id);
 ALTER TABLE media ADD CONSTRAINT fk_financial_group_id FOREIGN KEY (financial_group_id) REFERENCES financial_groups(id);
+ALTER TABLE financial_groups ADD CONSTRAINT fk_fg_image_id FOREIGN KEY (image_id) REFERENCES media(id);
 
 CREATE OR REPLACE FUNCTION check_item_category()
 RETURNS TRIGGER AS $$
@@ -216,7 +219,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON accounts
@@ -234,6 +236,8 @@ CREATE TRIGGER update_date_trigger BEFORE UPDATE ON items
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON purchase_list_items
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
 CREATE TRIGGER update_date_trigger BEFORE UPDATE ON account_access
+    FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
+CREATE TRIGGER update_date_trigger BEFORE UPDATE ON financial_groups
     FOR EACH ROW EXECUTE PROCEDURE update_date_on_change();
 
 CREATE OR REPLACE FUNCTION update_profile_picture_check()
@@ -280,6 +284,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_item_image_on_change BEFORE UPDATE ON items
+    FOR EACH ROW EXECUTE PROCEDURE update_item_image_check();
+CREATE TRIGGER update_item_image_on_change BEFORE UPDATE ON financial_groups
     FOR EACH ROW EXECUTE PROCEDURE update_item_image_check();
 
 CREATE OR REPLACE FUNCTION update_category_icon_check()
