@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
-	server_errors "shirinec.com/internal/errors"
+	"shirinec.com/internal/errors"
 	"shirinec.com/internal/services"
 	"shirinec.com/internal/utils"
 )

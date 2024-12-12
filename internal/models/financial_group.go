@@ -10,6 +10,7 @@ type FinancialGroups struct {
     ID int
     Name string
     UserID uuid.UUID
+    ImageID *int
     CreationDate time.Time
     UpdateDate time.Time
 }
