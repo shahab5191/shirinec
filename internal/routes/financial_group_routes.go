@@ -17,4 +17,5 @@ func (r *router) setupFinancialGroupRouter() {
     authMiddleware := middlewares.AuthMiddleWare(flags, r.db)
 
     r.GinEngine.POST("/financial_group", authMiddleware, financialGroupHandler.Create)
+    r.GinEngine.POST("/financial_group/:id/add_user", authMiddleware, financialGroupHandler.AddUser)
 }

@@ -10,6 +10,8 @@ import (
 
 type FinancialGroupRepository interface {
 	Create(ctx context.Context, financialGroup *models.FinancialGroups) error
+    AddUserToGroup(ctx context.Context, financialGroupID int, userID uuid.UUID) error
+    GetByID(ctx context.Context, finacialGroupID int) (*models.FinancialGroups, error)
 }
 
 type financialGroupRepository struct {
@@ -37,8 +39,22 @@ func (r *financialGroupRepository) AddUserToGroup(ctx context.Context, financial
         INSERT INTO user_financial_groups 
         (financial_group_id, user_id)
         VALUES ($1, $2)
+        RETURNING id
     `
     var relID int
     err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&relID)
     return err
+}
+
+func (r *financialGroupRepository) GetByID(ctx context.Context, finacialGroupID int) (*models.FinancialGroups, error){
+    var financialGroup models.FinancialGroups
+    query := `
+        SELECT name, image_id, user_id, creation_date, update_date
+        FROM financial_groups
+        WHERE id = $1
+    `
+
+    err := r.db.QueryRow(ctx, query, finacialGroupID).Scan(&financialGroup.Name, &financialGroup.ImageID, &financialGroup.UserID, &financialGroup.CreationDate, &financialGroup.UpdateDate)
+
+    return &financialGroup, err
 }
