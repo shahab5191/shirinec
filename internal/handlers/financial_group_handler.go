@@ -139,27 +139,46 @@ func (h *financialGroupHandler) List(c *gin.Context) {
 }
 
 func (h *financialGroupHandler) Delete(c *gin.Context) {
-
-}
-
-func (h *financialGroupHandler) RemoveGroupMember(c *gin.Context) {
 	financialGroupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.Logger.Errorf("financialGroupHandler.AddUser - Parsing id: %s", err.Error())
-		c.JSON(server_errors.InvalidInput.Unwrap())
-		return
-	}
-
-	memberID, err := uuid.Parse(c.Param("userID"))
-	if err != nil {
-		utils.Logger.Errorf("financialGroupHandler.AddUser - Getting userID param: %s", err.Error())
+		utils.Logger.Errorf("financialGroupHandler.Delete - Parsing id: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
 
 	userID, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
-		utils.Logger.Errorf("financialGroupHandler.AddUser - Parsing uuid from user_id: %s", err.Error())
+		utils.Logger.Errorf("financialGroupHandler.Delete - Parsing uuid from user_id: %s", err.Error())
+		c.JSON(server_errors.InternalError.Unwrap())
+		return
+	}
+
+	if err := h.financialGroupService.Delete(context.Background(), financialGroupID, userID); err != nil {
+		c.JSON(err.(*server_errors.SError).Unwrap())
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (h *financialGroupHandler) RemoveGroupMember(c *gin.Context) {
+	financialGroupID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.RemoveGroupMember - Parsing id: %s", err.Error())
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	memberID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.RemoveGroupMember - Getting userID param: %s", err.Error())
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.RemoveGroupMember - Parsing uuid from user_id: %s", err.Error())
 		c.JSON(server_errors.InternalError.Unwrap())
 		return
 	}

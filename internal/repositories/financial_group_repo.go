@@ -13,11 +13,13 @@ import (
 type FinancialGroupRepository interface {
 	Create(ctx context.Context, financialGroup *models.FinancialGroups) error
 	AddUserToGroup(ctx context.Context, financialGroupID int, userID uuid.UUID) error
-	GetByID(ctx context.Context, finacialGroupID int, userID uuid.UUID) (*dto.FinancialGroup, error)
+	GetRelatedGroupByID(ctx context.Context, finacialGroupID int, userID uuid.UUID) (*dto.FinancialGroup, error)
 	GetOwnedGroupByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error)
 	ListOwnedGroups(ctx context.Context, page, size int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error)
 	ListMemberedGroups(ctx context.Context, page, size int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error)
 	RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error
+	Delete(ctx context.Context, financialGroupID int) error
+	GetByID(ctx context.Context, financialGroupID int) (*models.FinancialGroups, error)
 }
 
 type financialGroupRepository struct {
@@ -52,7 +54,7 @@ func (r *financialGroupRepository) AddUserToGroup(ctx context.Context, financial
 	return err
 }
 
-func (r *financialGroupRepository) GetByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*dto.FinancialGroup, error) {
+func (r *financialGroupRepository) GetRelatedGroupByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*dto.FinancialGroup, error) {
 	var financialGroup dto.FinancialGroup
 	var usersList []uuid.UUID
 	query := `
@@ -204,22 +206,22 @@ func (r *financialGroupRepository) ListMemberedGroups(ctx context.Context, limit
 }
 
 func (r *financialGroupRepository) RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error {
-    if userID != memberID {
-        getOwnerQuery := `
+	if userID != memberID {
+		getOwnerQuery := `
             SELECT user_id
             FROM financial_groups
             WHERE id = $1
         `
-        var ownerID uuid.UUID
-        if err := r.db.QueryRow(ctx, getOwnerQuery, financialGroupID).Scan(&ownerID); err != nil {
-            return err
-        }
-        if ownerID != userID {
-            return &server_errors.Unauthorized
-        }
-    }
+		var ownerID uuid.UUID
+		if err := r.db.QueryRow(ctx, getOwnerQuery, financialGroupID).Scan(&ownerID); err != nil {
+			return err
+		}
+		if ownerID != userID {
+			return &server_errors.Unauthorized
+		}
+	}
 
-    query := `
+	query := `
         DELETE FROM user_financial_groups
         WHERE
             financial_group_id = $1
@@ -231,4 +233,27 @@ func (r *financialGroupRepository) RemoveGroupMember(ctx context.Context, financ
 	var id int
 	err := r.db.QueryRow(ctx, query, financialGroupID, memberID).Scan(&id)
 	return err
+}
+
+func (r *financialGroupRepository) Delete(ctx context.Context, financialGroupID int) error {
+	query := `
+        DELETE FROM financial_groups
+        WHERE id = $1
+        RETURNING id
+    `
+	var id int
+	err := r.db.QueryRow(ctx, query, financialGroupID).Scan(&id)
+	return err
+}
+
+func (r *financialGroupRepository) GetByID(ctx context.Context, financialGroupID int) (*models.FinancialGroups, error) {
+	query := `
+        SELECT id, name, user_id, image_id, creation_date, update_date
+        FROM financial_groups
+        WHERE id = $1
+    `
+
+	var financialGroup models.FinancialGroups
+	err := r.db.QueryRow(ctx, query, financialGroupID).Scan(&financialGroup.ID, &financialGroup.Name, &financialGroup.UserID, &financialGroup.ImageID, &financialGroup.CreationDate, &financialGroup.UpdateDate)
+	return &financialGroup, err
 }

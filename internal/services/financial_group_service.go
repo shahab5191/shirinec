@@ -22,6 +22,7 @@ type FinancialGroupService interface {
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error)
 	List(ctx context.Context, input dto.FinancialGroupListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error)
 	RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error
+	Delete(ctx context.Context, financialGroupID int, userID uuid.UUID) error
 }
 
 type financialGroupService struct {
@@ -82,7 +83,7 @@ func (s *financialGroupService) AddUserToGroup(ctx context.Context, financialGro
 }
 
 func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error) {
-	financialGroup, err := s.financialGroupRepo.GetByID(ctx, id, userID)
+	financialGroup, err := s.financialGroupRepo.GetRelatedGroupByID(ctx, id, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
@@ -160,6 +161,41 @@ func (s *financialGroupService) RemoveGroupMember(ctx context.Context, financial
 		}
 
 		utils.Logger.Errorf("financialGroupService.RemoveUserFromGroup - Calling financialGroupRepo.RemoveUserFromGroup: %s", err.Error())
+		return &server_errors.InternalError
+	}
+
+	return nil
+}
+
+func (s *financialGroupService) Delete(ctx context.Context, financialGroupID int, userID uuid.UUID) error {
+	financialGroup, err := s.financialGroupRepo.GetByID(ctx, financialGroupID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &server_errors.ItemNotFound
+		}
+
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return pgErr
+		}
+
+		utils.Logger.Errorf("financialGroupService.Delete - Calling financialGroupRepo.GetOwnedGroupByID: %s", err.Error())
+		return &server_errors.InternalError
+	}
+
+	if financialGroup.UserID != userID {
+		return &server_errors.Unauthorized
+	}
+
+	if err := s.financialGroupRepo.Delete(ctx, financialGroupID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &server_errors.ItemNotFound
+		}
+
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return pgErr
+		}
+
+		utils.Logger.Errorf("financialGroupService.Delete - Calling financialGroupRepo.Delete: %s", err.Error())
 		return &server_errors.InternalError
 	}
 
