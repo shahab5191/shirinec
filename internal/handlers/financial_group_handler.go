@@ -69,15 +69,9 @@ func (h *financialGroupHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	var input dto.FinancialGroupAddUser
-	if err := c.ShouldBindJSON(&input); err != nil {
-		if errList := server_errors.AsValidatorError(err); errList != nil {
-			utils.Logger.Infof("Error is ValidationError: %s", err.Error())
-			c.JSON(server_errors.ValidationErrorBuilder(errList).Unwrap())
-			return
-		}
-
-		utils.Logger.Errorf("financialGroupHandler.AddUser - Binding input to dto.FinancialGroupAddUser: %s", err.Error())
+	memberID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.AddUser - Getting userID param: %s", err.Error())
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return
 	}
@@ -89,7 +83,7 @@ func (h *financialGroupHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	if err = h.financialGroupService.AddUserToGroup(context.Background(), financialGroupID, input.UserID, userID); err != nil {
+	if err = h.financialGroupService.AddUserToGroup(context.Background(), financialGroupID, memberID, userID); err != nil {
 		c.JSON(err.(*server_errors.SError).Unwrap())
 		return
 	}

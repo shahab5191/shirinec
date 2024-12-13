@@ -17,8 +17,9 @@ func (r *router) setupFinancialGroupRouter() {
     authMiddleware := middlewares.AuthMiddleWare(flags, r.db)
 
     r.GinEngine.POST("/financial_group", authMiddleware, financialGroupHandler.Create)
-    r.GinEngine.POST("/financial_group/:id/add_user", authMiddleware, financialGroupHandler.AddUser)
+    r.GinEngine.POST("/financial_group/:id/:userID", authMiddleware, financialGroupHandler.AddUser)
     r.GinEngine.GET("/financial_group/:id", authMiddleware, financialGroupHandler.GetByID)
     r.GinEngine.GET("/financial_group", authMiddleware, financialGroupHandler.List)
     r.GinEngine.DELETE("/financial_group/:id", authMiddleware, financialGroupHandler.Delete)
+    r.GinEngine.DELETE("/financial_group/:id/:userID")
 }
