@@ -50,7 +50,7 @@ func (r *financialGroupRepository) AddUserToGroup(ctx context.Context, financial
 
 func (r *financialGroupRepository) GetByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*dto.FinancialGroup, error) {
 	var financialGroup dto.FinancialGroup
-    var usersList []uuid.UUID
+	var usersList []uuid.UUID
 	query := `
         SELECT
             fg.name, m.url, fg.user_id, fg.creation_date, fg.update_date, ARRAY_AGG(ufg.user_id) AS members
@@ -71,7 +71,7 @@ func (r *financialGroupRepository) GetByID(ctx context.Context, financialGroupID
         GROUP BY
             fg.name, m.url, fg.user_id, fg.creation_date, fg.update_date;
     `
-    usersQuery := `
+	usersQuery := `
         SELECT u.id, pm.url profie_picture, p.name, p.family_name
         FROM users u
         JOIN profiles p ON p.id = u.profile_id
@@ -79,29 +79,29 @@ func (r *financialGroupRepository) GetByID(ctx context.Context, financialGroupID
         WHERE u.id = ANY($1)
     `
 
-	if err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&financialGroup.Name, &financialGroup.ImageURL, &financialGroup.UserID, &financialGroup.CreationDate, &financialGroup.UpdateDate, &usersList); err != nil {
-        return nil, err
-    }
-    
-    rows, err := r.db.Query(ctx, usersQuery, usersList)
-    if err != nil{
-        return nil, err
-    }
+	if err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&financialGroup.Name, &financialGroup.ImageURL, &financialGroup.OwnerID, &financialGroup.CreationDate, &financialGroup.UpdateDate, &usersList); err != nil {
+		return nil, err
+	}
 
-    var users []*dto.UserGetResponse
-    for rows.Next(){
-        var user dto.UserGetResponse
-        if err := rows.Scan(&user.ID, &user.ProfilePictureURL, &user.Name, &user.FamilyName); err != nil {
-            return nil, err
-        }
-        users = append(users, &user)
-    }
+	rows, err := r.db.Query(ctx, usersQuery, usersList)
+	if err != nil {
+		return nil, err
+	}
 
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
+	var users []*dto.UserGetResponse
+	for rows.Next() {
+		var user dto.UserGetResponse
+		if err := rows.Scan(&user.ID, &user.ProfilePictureURL, &user.Name, &user.FamilyName); err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
 
-    financialGroup.Users = users
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	financialGroup.Users = users
 	return &financialGroup, err
 }
 

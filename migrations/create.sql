@@ -144,8 +144,8 @@ CREATE TABLE financial_groups (
 
 CREATE TABLE user_financial_groups (
     id SERIAL PRIMARY KEY,
-    financial_group_id INT NOT NULL REFERENCES financial_groups(id),
-    user_id UUID NOT NULL REFERENCES users(id)
+    financial_group_id INT NOT NULL REFERENCES financial_groups(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE account_access (

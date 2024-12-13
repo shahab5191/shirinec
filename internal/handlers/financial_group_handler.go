@@ -17,6 +17,8 @@ type FinancialGroupHandler interface {
 	Create(c *gin.Context)
 	AddUser(c *gin.Context)
 	GetByID(c *gin.Context)
+	List(c *gin.Context)
+	Delete(c *gin.Context)
 }
 
 type financialGroupHandler struct {
@@ -117,4 +119,30 @@ func (h *financialGroupHandler) GetByID(c *gin.Context) {
 	result := dto.CreateResponse[dto.FinancialGroup]{Result: *financialGroup}
 
 	c.JSON(http.StatusOK, result)
+}
+
+func (h *financialGroupHandler) List(c *gin.Context) {
+	var input dto.ListRequest
+	if err := c.ShouldBindQuery(&input); err != nil {
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		c.JSON(server_errors.InternalError.Unwrap())
+		return
+	}
+
+	groupsList, err := h.financialGroupService.List(context.Background(), input, userID)
+	if err != nil {
+		c.JSON(err.(*server_errors.SError).Unwrap())
+		return
+	}
+
+	c.JSON(http.StatusOK, groupsList)
+}
+
+func (h *financialGroupHandler) Delete(c *gin.Context) {
+
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
+	"shirinec.com/internal/enums"
 	"shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 	"shirinec.com/internal/repositories"
@@ -18,6 +19,7 @@ type FinancialGroupService interface {
 	Create(ctx context.Context, input *dto.FinancialGroupCreateRequest, userID uuid.UUID) (*models.FinancialGroups, error)
 	AddUserToGroup(ctx context.Context, financialGroupID int, newUserID uuid.UUID, userID uuid.UUID) error
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error)
+	List(ctx context.Context, input dto.ListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error)
 }
 
 type financialGroupService struct {
@@ -88,9 +90,19 @@ func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid
 			return nil, pgErr
 		}
 
-        utils.Logger.Errorf("financialGroupService.GetByID - Calling GetByID: %s", err.Error())
-        return nil, &server_errors.InternalError
+		utils.Logger.Errorf("financialGroupService.GetByID - Calling GetByID: %s", err.Error())
+		return nil, &server_errors.InternalError
+	}
+
+	if userID == financialGroup.OwnerID {
+		financialGroup.UserRole = enums.FinancialGroupOwner
+	} else {
+		financialGroup.UserRole = enums.FinancialGroupMember
 	}
 
 	return financialGroup, nil
+}
+
+func (s *financialGroupService) List(ctx context.Context, input dto.ListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error) {
+	return nil, nil
 }
