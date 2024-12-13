@@ -12,6 +12,7 @@ const (
 	PGExceptionDefault     = "P0001"
 	PGCategoryNotFound     = "S0001"
 	PGInvalidMediaRefrence = "S0002"
+    PGUserAlreadyInGroup   = "S0003"
 )
 
 func AsPgError(err error) error {
@@ -26,6 +27,8 @@ func AsPgError(err error) error {
 			return &CategoryNotFound
         case PGInvalidMediaRefrence:
             return &InvalidMediaRefrence
+        case PGUserAlreadyInGroup:
+            return &UserAlreadyInFinancialGroup
 		default:
 			log.Printf("Undefined Postgresql error: %s", pgErr.Error())
 		}

@@ -40,3 +40,10 @@ const (
 	Group  MediaAccess = "group"
 	Public MediaAccess = "public"
 )
+
+type FinancialGroupRole string
+
+const (
+	FinancialGroupOwner  FinancialGroupRole = "owner"
+	FinancialGroupMember FinancialGroupRole = "member"
+)
