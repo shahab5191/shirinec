@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
-	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
 	"shirinec.com/internal/utils"
 )
@@ -115,7 +114,7 @@ func (h *financialGroupHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	result := dto.CreateResponse[models.FinancialGroups]{Result: *financialGroup}
+	result := dto.CreateResponse[dto.FinancialGroup]{Result: *financialGroup}
 
 	c.JSON(http.StatusOK, result)
 }

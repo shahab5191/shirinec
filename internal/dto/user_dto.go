@@ -18,7 +18,7 @@ type UserVerificationRequest struct {
 
 type UserGetResponse struct {
 	ID                uuid.UUID `json:"id"`
-	Name              string    `json:"name"`
-	FamilyName        string    `json:"familyName"`
-	ProfilePictureURL string    `json:"profilePictureURL"`
+	Name              *string    `json:"name"`
+	FamilyName        *string    `json:"familyName"`
+	ProfilePictureURL *string    `json:"profilePictureURL"`
 }

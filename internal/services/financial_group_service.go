@@ -17,7 +17,7 @@ import (
 type FinancialGroupService interface {
 	Create(ctx context.Context, input *dto.FinancialGroupCreateRequest, userID uuid.UUID) (*models.FinancialGroups, error)
 	AddUserToGroup(ctx context.Context, financialGroupID int, newUserID uuid.UUID, userID uuid.UUID) error
-	GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.FinancialGroups, error)
+	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error)
 }
 
 type financialGroupService struct {
@@ -77,7 +77,7 @@ func (s *financialGroupService) AddUserToGroup(ctx context.Context, financialGro
 	return nil
 }
 
-func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.FinancialGroups, error) {
+func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error) {
 	financialGroup, err := s.financialGroupRepo.GetByID(ctx, id, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -88,7 +88,7 @@ func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid
 			return nil, pgErr
 		}
 
-        utils.Logger.Error("financialGroupService.GetByID - Calling GetByID: %s", err.Error())
+        utils.Logger.Errorf("financialGroupService.GetByID - Calling GetByID: %s", err.Error())
         return nil, &server_errors.InternalError
 	}
 

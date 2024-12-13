@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type FinancialGroupCreateRequest struct {
     Name string `json:"name" binding:"required,alphaNumericSpace"`
@@ -11,10 +15,12 @@ type FinancialGroupAddUser struct {
     UserID uuid.UUID `json:"userID" binding:"required,uuid4"`
 }
 
-type FinancialGroupResponse struct {
+type FinancialGroup struct {
     ID int
     Name string
-    ImageURL string
+    ImageURL *string
     UserID uuid.UUID
     Users []*UserGetResponse
+    CreationDate time.Time
+    UpdateDate time.Time
 }

@@ -54,7 +54,9 @@ CREATE TABLE profiles (
     address TEXT,
     name VARCHAR(255),
     family_name VARCHAR(255),
-    middle_name VARCHAR(255)
+    middle_name VARCHAR(255),
+    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE media (
@@ -243,24 +245,35 @@ CREATE TRIGGER update_date_trigger BEFORE UPDATE ON financial_groups
 CREATE OR REPLACE FUNCTION update_profile_picture_check()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS(
+    IF NOT EXISTS(
         SELECT 1
         FROM media
         WHERE id = NEW.picture_id
-        AND user_id = NEW.user_id
     ) THEN
-        UPDATE media
-        SET status = 'attached'
-        WHERE id = NEW.picture_id;
-    ELSE 
-        RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.icon_id
+         RAISE EXCEPTION 'Foreign key violation: % does not exists in media', NEW.picture_id
             USING ERRCODE = 'S0002';
     END IF;
+       
+    IF NOT EXISTS(
+        SELECT 1
+        FROM media
+        JOIN users on users.profile_id = NEW.id
+        WHERE id = NEW.picture_id
+        AND user_id = users.id
+    ) THEN
+        RAISE EXCEPTION 'Unauthorized access: % does not belong to user %', NEW.picture_id, NEW.user_id
+            USING ERRCODE = 'S0004';
+    END IF;
+
+    UPDATE media
+    SET status = 'attached'
+    WHERE id = NEW.picture_id;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_profile_picture_on_change BEFORE UPDATE ON profiles
+CREATE TRIGGER update_profile_picture_on_change BEFORE UPDATE OF picture_id ON profiles
     FOR EACH ROW EXECUTE PROCEDURE update_profile_picture_check();
 
 CREATE OR REPLACE FUNCTION update_item_image_check()
@@ -310,3 +323,34 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_category_icon_on_change BEFORE UPDATE ON categories
     FOR EACH ROW EXECUTE PROCEDURE update_category_icon_check();
+
+CREATE OR REPLACE FUNCTION add_user_to_financial_group_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS(
+        SELECT 1
+        FROM user_financial_groups
+        WHERE user_id = NEW.user_id
+        AND financial_group_id = NEW.financial_group_id
+    ) THEN
+        RAISE EXCEPTION 'User is already in selected group'
+            USING ERRCODE = 'S0003';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_creating_existing_group_member BEFORE INSERT ON user_financial_groups
+    FOR EACH ROW EXECUTE PROCEDURE add_user_to_financial_group_check();
+
+CREATE OR REPLACE FUNCTION add_financial_group_insert_owner()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO user_financial_groups (financial_group_id, user_id)
+    VALUES (NEW.id, NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER add_owner_to_financial_group AFTER INSERT ON financial_groups
+    FOR EACH ROW EXECUTE PROCEDURE add_financial_group_insert_owner();
