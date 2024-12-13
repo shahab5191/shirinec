@@ -10,3 +10,11 @@ type FinancialGroupCreateRequest struct {
 type FinancialGroupAddUser struct {
     UserID uuid.UUID `json:"userID" binding:"required,uuid4"`
 }
+
+type FinancialGroupResponse struct {
+    ID int
+    Name string
+    ImageURL string
+    UserID uuid.UUID
+    Users []*UserGetResponse
+}

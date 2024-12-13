@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +17,7 @@ import (
 type FinancialGroupService interface {
 	Create(ctx context.Context, input *dto.FinancialGroupCreateRequest, userID uuid.UUID) (*models.FinancialGroups, error)
 	AddUserToGroup(ctx context.Context, financialGroupID int, newUserID uuid.UUID, userID uuid.UUID) error
+	GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.FinancialGroups, error)
 }
 
 type financialGroupService struct {
@@ -49,8 +52,12 @@ func (s *financialGroupService) Create(ctx context.Context, input *dto.Financial
 }
 
 func (s *financialGroupService) AddUserToGroup(ctx context.Context, financialGroupID int, newUserID uuid.UUID, userID uuid.UUID) error {
-	financialGroup, err := s.financialGroupRepo.GetByID(ctx, financialGroupID)
+	// First checking to see if user is owner of selected group by getting group by id
+	_, err := s.financialGroupRepo.GetOwnedGroupByID(ctx, financialGroupID, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &server_errors.ItemNotFound
+		}
 		if pgErr := server_errors.AsPgError(err); pgErr != nil {
 			return pgErr
 		}
@@ -58,18 +65,32 @@ func (s *financialGroupService) AddUserToGroup(ctx context.Context, financialGro
 		return &server_errors.InternalError
 	}
 
-	if financialGroup.UserID != userID {
-		return &server_errors.Unauthorized
-	}
-
 	if err = s.financialGroupRepo.AddUserToGroup(ctx, financialGroupID, newUserID); err != nil {
 		if pgErr := server_errors.AsPgError(err); pgErr != nil {
 			return pgErr
 		}
 
-        utils.Logger.Errorf("financialGroupService.AddUserToGroup - Calling financialGroupRepo.AddUserToGroup: (id: %d) %s", financialGroupID, err.Error())
+		utils.Logger.Errorf("financialGroupService.AddUserToGroup - Calling financialGroupRepo.AddUserToGroup: (id: %d) %s", financialGroupID, err.Error())
 		return &server_errors.InternalError
 	}
 
 	return nil
+}
+
+func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*models.FinancialGroups, error) {
+	financialGroup, err := s.financialGroupRepo.GetByID(ctx, id, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &server_errors.ItemNotFound
+		}
+
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return nil, pgErr
+		}
+
+        utils.Logger.Error("financialGroupService.GetByID - Calling GetByID: %s", err.Error())
+        return nil, &server_errors.InternalError
+	}
+
+	return financialGroup, nil
 }

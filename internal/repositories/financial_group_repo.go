@@ -10,8 +10,9 @@ import (
 
 type FinancialGroupRepository interface {
 	Create(ctx context.Context, financialGroup *models.FinancialGroups) error
-    AddUserToGroup(ctx context.Context, financialGroupID int, userID uuid.UUID) error
-    GetByID(ctx context.Context, finacialGroupID int) (*models.FinancialGroups, error)
+	AddUserToGroup(ctx context.Context, financialGroupID int, userID uuid.UUID) error
+	GetByID(ctx context.Context, finacialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error)
+    GetOwnedGroupByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error)
 }
 
 type financialGroupRepository struct {
@@ -35,26 +36,48 @@ func (r *financialGroupRepository) Create(ctx context.Context, financialGroup *m
 }
 
 func (r *financialGroupRepository) AddUserToGroup(ctx context.Context, financialGroupID int, userID uuid.UUID) error {
-    query := `
+	query := `
         INSERT INTO user_financial_groups 
         (financial_group_id, user_id)
         VALUES ($1, $2)
         RETURNING id
     `
-    var relID int
-    err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&relID)
-    return err
+	var relID int
+	err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&relID)
+	return err
 }
 
-func (r *financialGroupRepository) GetByID(ctx context.Context, finacialGroupID int) (*models.FinancialGroups, error){
-    var financialGroup models.FinancialGroups
-    query := `
+func (r *financialGroupRepository) GetByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error) {
+	var financialGroup models.FinancialGroups
+	query := `
         SELECT name, image_id, user_id, creation_date, update_date
         FROM financial_groups
         WHERE id = $1
+        AND (
+            user_id = $2
+            OR
+            EXISTS(
+                SELECT 1 FROM user_financial_groups
+                WHERE financial_group_id = $1
+                AND user_id = $2
+            )
+        )
     `
 
-    err := r.db.QueryRow(ctx, query, finacialGroupID).Scan(&financialGroup.Name, &financialGroup.ImageID, &financialGroup.UserID, &financialGroup.CreationDate, &financialGroup.UpdateDate)
+	err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&financialGroup.Name, &financialGroup.ImageID, &financialGroup.UserID, &financialGroup.CreationDate, &financialGroup.UpdateDate)
 
-    return &financialGroup, err
+	return &financialGroup, err
+}
+
+func (r *financialGroupRepository) GetOwnedGroupByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error) {
+	var financialGroup models.FinancialGroups
+	query := `
+        SELECT name, image_id, user_id, creation_date, update_date
+        FROM financial_groups
+        WHERE id = $1 AND user_id = $2
+    `
+
+	err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&financialGroup.Name, &financialGroup.ImageID, &financialGroup.UserID, &financialGroup.CreationDate, &financialGroup.UpdateDate)
+
+	return &financialGroup, err
 }

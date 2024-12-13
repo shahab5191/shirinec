@@ -18,4 +18,5 @@ func (r *router) setupFinancialGroupRouter() {
 
     r.GinEngine.POST("/financial_group", authMiddleware, financialGroupHandler.Create)
     r.GinEngine.POST("/financial_group/:id/add_user", authMiddleware, financialGroupHandler.AddUser)
+    r.GinEngine.GET("/financial_group/:id", authMiddleware, financialGroupHandler.GetByID)
 }

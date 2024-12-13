@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"shirinec.com/internal/dto"
 	"shirinec.com/internal/errors"
+	"shirinec.com/internal/models"
 	"shirinec.com/internal/services"
 	"shirinec.com/internal/utils"
 )
@@ -16,6 +17,7 @@ import (
 type FinancialGroupHandler interface {
 	Create(c *gin.Context)
 	AddUser(c *gin.Context)
+	GetByID(c *gin.Context)
 }
 
 type financialGroupHandler struct {
@@ -92,4 +94,28 @@ func (h *financialGroupHandler) AddUser(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func (h *financialGroupHandler) GetByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		c.JSON(server_errors.InternalError.Unwrap())
+		return
+	}
+
+	financialGroup, err := h.financialGroupService.GetByID(context.Background(), id, userID)
+	if err != nil {
+		c.JSON(err.(*server_errors.SError).Unwrap())
+		return
+	}
+
+	result := dto.CreateResponse[models.FinancialGroups]{Result: *financialGroup}
+
+	c.JSON(http.StatusOK, result)
 }
