@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/dto"
+	server_errors "shirinec.com/internal/errors"
 	"shirinec.com/internal/models"
 )
 
@@ -16,6 +17,7 @@ type FinancialGroupRepository interface {
 	GetOwnedGroupByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error)
 	ListOwnedGroups(ctx context.Context, page, size int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error)
 	ListMemberedGroups(ctx context.Context, page, size int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error)
+	RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error
 }
 
 type financialGroupRepository struct {
@@ -199,4 +201,34 @@ func (r *financialGroupRepository) ListMemberedGroups(ctx context.Context, limit
 	}
 
 	return financialGroups, totalCount, nil
+}
+
+func (r *financialGroupRepository) RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error {
+    if userID != memberID {
+        getOwnerQuery := `
+            SELECT user_id
+            FROM financial_groups
+            WHERE id = $1
+        `
+        var ownerID uuid.UUID
+        if err := r.db.QueryRow(ctx, getOwnerQuery, financialGroupID).Scan(&ownerID); err != nil {
+            return err
+        }
+        if ownerID != userID {
+            return &server_errors.Unauthorized
+        }
+    }
+
+    query := `
+        DELETE FROM user_financial_groups
+        WHERE
+            financial_group_id = $1
+            AND
+            user_id = $2
+        RETURNING id
+    `
+
+	var id int
+	err := r.db.QueryRow(ctx, query, financialGroupID, memberID).Scan(&id)
+	return err
 }

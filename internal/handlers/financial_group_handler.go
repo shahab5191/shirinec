@@ -19,6 +19,7 @@ type FinancialGroupHandler interface {
 	GetByID(c *gin.Context)
 	List(c *gin.Context)
 	Delete(c *gin.Context)
+	RemoveGroupMember(c *gin.Context)
 }
 
 type financialGroupHandler struct {
@@ -139,4 +140,34 @@ func (h *financialGroupHandler) List(c *gin.Context) {
 
 func (h *financialGroupHandler) Delete(c *gin.Context) {
 
+}
+
+func (h *financialGroupHandler) RemoveGroupMember(c *gin.Context) {
+	financialGroupID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.AddUser - Parsing id: %s", err.Error())
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	memberID, err := uuid.Parse(c.Param("userID"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.AddUser - Getting userID param: %s", err.Error())
+		c.JSON(server_errors.InvalidInput.Unwrap())
+		return
+	}
+
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		utils.Logger.Errorf("financialGroupHandler.AddUser - Parsing uuid from user_id: %s", err.Error())
+		c.JSON(server_errors.InternalError.Unwrap())
+		return
+	}
+
+	if err := h.financialGroupService.RemoveGroupMember(context.Background(), financialGroupID, memberID, userID); err != nil {
+		c.JSON(err.(*server_errors.SError).Unwrap())
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

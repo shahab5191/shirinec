@@ -21,5 +21,5 @@ func (r *router) setupFinancialGroupRouter() {
     r.GinEngine.GET("/financial_group/:id", authMiddleware, financialGroupHandler.GetByID)
     r.GinEngine.GET("/financial_group", authMiddleware, financialGroupHandler.List)
     r.GinEngine.DELETE("/financial_group/:id", authMiddleware, financialGroupHandler.Delete)
-    r.GinEngine.DELETE("/financial_group/:id/:userID")
+    r.GinEngine.DELETE("/financial_group/:id/:userID", authMiddleware, financialGroupHandler.RemoveGroupMember)
 }

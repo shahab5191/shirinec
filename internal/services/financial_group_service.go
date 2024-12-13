@@ -21,6 +21,7 @@ type FinancialGroupService interface {
 	AddUserToGroup(ctx context.Context, financialGroupID int, newUserID uuid.UUID, userID uuid.UUID) error
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error)
 	List(ctx context.Context, input dto.FinancialGroupListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error)
+	RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error
 }
 
 type financialGroupService struct {
@@ -141,4 +142,26 @@ func (s *financialGroupService) List(ctx context.Context, input dto.FinancialGro
 	response.Pagination.RemainingPages = remainingPages
 	response.Pagination.TotalRecord = totalCount
 	return &response, nil
+}
+
+func (s *financialGroupService) RemoveGroupMember(ctx context.Context, financialGroupID int, memberID, userID uuid.UUID) error {
+	if err := s.financialGroupRepo.RemoveGroupMember(ctx, financialGroupID, memberID, userID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &server_errors.ItemNotFound
+		}
+
+		var sErr *server_errors.SError
+		if errors.As(err, &sErr) {
+			return sErr
+		}
+
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return pgErr
+		}
+
+		utils.Logger.Errorf("financialGroupService.RemoveUserFromGroup - Calling financialGroupRepo.RemoveUserFromGroup: %s", err.Error())
+		return &server_errors.InternalError
+	}
+
+	return nil
 }
