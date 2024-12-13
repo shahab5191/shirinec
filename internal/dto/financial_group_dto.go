@@ -27,12 +27,18 @@ type FinancialGroup struct {
 	UpdateDate   time.Time
 }
 
+type FinancialGroupListRequest struct {
+	Page int                      `form:"page,default=0" binding:"number"`
+	Size int                      `form:"size,default=10" binding:"number"`
+	Role enums.FinancialGroupRole `form:"role" binding:"financialRole"`
+}
+
 type FinancialGroupListItem struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 type FinancialGroupListResponse struct {
-	Pagination      PaginationData           `json:"pagination"`
-	FinancialGroups []FinancialGroupListItem `json:"financialGroups"`
+	Pagination     PaginationData           `json:"pagination"`
+	FinancialGroup []FinancialGroupListItem `json:"financialGroup"`
 }

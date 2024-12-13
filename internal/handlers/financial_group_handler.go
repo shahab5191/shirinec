@@ -122,7 +122,7 @@ func (h *financialGroupHandler) GetByID(c *gin.Context) {
 }
 
 func (h *financialGroupHandler) List(c *gin.Context) {
-	var input dto.ListRequest
+	var input dto.FinancialGroupListRequest
 	if err := c.ShouldBindQuery(&input); err != nil {
 		c.JSON(server_errors.InvalidInput.Unwrap())
 		return

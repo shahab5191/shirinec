@@ -14,6 +14,8 @@ type FinancialGroupRepository interface {
 	AddUserToGroup(ctx context.Context, financialGroupID int, userID uuid.UUID) error
 	GetByID(ctx context.Context, finacialGroupID int, userID uuid.UUID) (*dto.FinancialGroup, error)
 	GetOwnedGroupByID(ctx context.Context, financialGroupID int, userID uuid.UUID) (*models.FinancialGroups, error)
+	ListOwnedGroups(ctx context.Context, page, size int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error)
+	ListMemberedGroups(ctx context.Context, page, size int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error)
 }
 
 type financialGroupRepository struct {
@@ -116,4 +118,85 @@ func (r *financialGroupRepository) GetOwnedGroupByID(ctx context.Context, financ
 	err := r.db.QueryRow(ctx, query, financialGroupID, userID).Scan(&financialGroup.Name, &financialGroup.ImageID, &financialGroup.UserID, &financialGroup.CreationDate, &financialGroup.UpdateDate)
 
 	return &financialGroup, err
+}
+
+func (r *financialGroupRepository) ListOwnedGroups(ctx context.Context, limit, offset int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error) {
+	query := `
+        SELECT id, name
+        FROM financial_groups
+        WHERE user_id = $1
+        LIMIT $2
+        OFFSET $3
+    `
+
+	rows, err := r.db.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var financialGroups []dto.FinancialGroupListItem
+	for rows.Next() {
+		var financialGroup dto.FinancialGroupListItem
+		if err := rows.Scan(&financialGroup.ID, &financialGroup.Name); err != nil {
+			return nil, 0, err
+		}
+		financialGroups = append(financialGroups, financialGroup)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	countQuery := `
+        SELECT COUNT(*) FROM financial_groups WHERE user_id = $1
+    `
+
+	var totalCount int
+
+	if err := r.db.QueryRow(ctx, countQuery, userID).Scan(&totalCount); err != nil {
+		return nil, 0, err
+	}
+
+	return financialGroups, totalCount, nil
+}
+
+func (r *financialGroupRepository) ListMemberedGroups(ctx context.Context, limit, offset int, userID uuid.UUID) ([]dto.FinancialGroupListItem, int, error) {
+	query := `
+        SELECT fg.id, fg.name as role
+        FROM user_financial_groups ufg
+        JOIN financial_groups fg ON fg.id = ufg.financial_group_id
+        WHERE ufg.user_id = $1
+        LIMIT $2
+        OFFSET $3
+    `
+
+	rows, err := r.db.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var financialGroups []dto.FinancialGroupListItem
+	for rows.Next() {
+		var financialGroup dto.FinancialGroupListItem
+		if err := rows.Scan(&financialGroup.ID, &financialGroup.Name); err != nil {
+			return nil, 0, err
+		}
+		financialGroups = append(financialGroups, financialGroup)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	countQuery := `
+        SELECT COUNT(*) FROM user_financial_groups WHERE user_id = $1
+    `
+
+	var totalCount int
+
+	if err := r.db.QueryRow(ctx, countQuery, userID).Scan(&totalCount); err != nil {
+		return nil, 0, err
+	}
+
+	return financialGroups, totalCount, nil
 }

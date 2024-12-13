@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ type FinancialGroupService interface {
 	Create(ctx context.Context, input *dto.FinancialGroupCreateRequest, userID uuid.UUID) (*models.FinancialGroups, error)
 	AddUserToGroup(ctx context.Context, financialGroupID int, newUserID uuid.UUID, userID uuid.UUID) error
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.FinancialGroup, error)
-	List(ctx context.Context, input dto.ListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error)
+	List(ctx context.Context, input dto.FinancialGroupListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error)
 }
 
 type financialGroupService struct {
@@ -103,6 +104,41 @@ func (s *financialGroupService) GetByID(ctx context.Context, id int, userID uuid
 	return financialGroup, nil
 }
 
-func (s *financialGroupService) List(ctx context.Context, input dto.ListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error) {
-	return nil, nil
+func (s *financialGroupService) List(ctx context.Context, input dto.FinancialGroupListRequest, userID uuid.UUID) (*dto.FinancialGroupListResponse, error) {
+	limit := input.Size
+	offset := input.Page * input.Size
+
+	var financialGroups []dto.FinancialGroupListItem
+	var totalCount int
+	var err error
+	switch input.Role {
+	case enums.FinancialGroupOwner:
+		financialGroups, totalCount, err = s.financialGroupRepo.ListOwnedGroups(ctx, limit, offset, userID)
+	case enums.FinancialGroupMember:
+		financialGroups, totalCount, err = s.financialGroupRepo.ListMemberedGroups(ctx, limit, offset, userID)
+	}
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &server_errors.ItemNotFound
+		}
+
+		if pgErr := server_errors.AsPgError(err); pgErr != nil {
+			return nil, pgErr
+		}
+
+		utils.Logger.Errorf("financialGroupService.List - Calling financialGroupRepo.List: %s", err.Error())
+		return nil, &server_errors.InternalError
+	}
+
+	totalPages := int(math.Ceil(float64(totalCount) / float64(input.Size)))
+	remainingPages := int(math.Max(float64(totalPages-input.Page-1), 0))
+
+	var response dto.FinancialGroupListResponse
+
+	response.FinancialGroup = financialGroups
+	response.Pagination.PageNumber = input.Page
+	response.Pagination.PageSize = input.Size
+	response.Pagination.RemainingPages = remainingPages
+	response.Pagination.TotalRecord = totalCount
+	return &response, nil
 }

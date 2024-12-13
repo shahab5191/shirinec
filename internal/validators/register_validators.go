@@ -7,7 +7,7 @@ import (
 )
 
 func RegisterValidators(validatorObject *validator.Validate) {
-    err := validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
+	err := validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
 	if err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering categoryCreateType")
 	}
@@ -16,9 +16,14 @@ func RegisterValidators(validatorObject *validator.Validate) {
 	if err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering alphaNumericSpace")
 	}
-    
-    err = validatorObject.RegisterValidation("intLen", intLenValidator)
-    if err != nil {
+
+	err = validatorObject.RegisterValidation("intLen", intLenValidator)
+	if err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering intLen")
+	}
+
+	err = validatorObject.RegisterValidation("financialRole", financialRoleValidator)
+	if err != nil {
+		log.Fatalf("[Panic] - RegisterValidators - registering financialRoleValidator")
 	}
 }
