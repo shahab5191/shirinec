@@ -7,23 +7,23 @@ import (
 )
 
 func RegisterValidators(validatorObject *validator.Validate) {
-	err := validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator)
-	if err != nil {
+	if err := validatorObject.RegisterValidation("categoryCreateType", categoryCreateTypeValidator); err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering categoryCreateType")
 	}
 
-	err = validatorObject.RegisterValidation("alphaNumericSpace", alphaNumericSpaceValidator)
-	if err != nil {
+	if err := validatorObject.RegisterValidation("alphaNumericSpace", alphaNumericSpaceValidator); err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering alphaNumericSpace")
 	}
 
-	err = validatorObject.RegisterValidation("intLen", intLenValidator)
-	if err != nil {
+	if err := validatorObject.RegisterValidation("intLen", intLenValidator); err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering intLen")
 	}
 
-	err = validatorObject.RegisterValidation("financialRole", financialRoleValidator)
-	if err != nil {
+	if err := validatorObject.RegisterValidation("financialRole", financialRoleValidator); err != nil {
 		log.Fatalf("[Panic] - RegisterValidators - registering financialRoleValidator")
+	}
+
+	if err := validatorObject.RegisterValidation("accountType", accountTypeValidator); err != nil {
+		log.Fatalf("[Panic] - RegisterValidators - registering accountTypeValidator")
 	}
 }

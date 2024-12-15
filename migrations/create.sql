@@ -18,6 +18,7 @@ DROP TYPE IF EXISTS CategoryEntityType;
 DROP TYPE IF EXISTS AccessLevel CASCADE;
 DROP TYPE IF EXISTS MediaStatus CASCADE;
 DROP TYPE IF EXISTS MediaAccess;
+DROP TYPE IF EXISTS AccountType;
 
 CREATE TYPE UserStatus AS ENUM ('banned', 'verified', 'disabled', 'locked', 'pending');
 
@@ -32,6 +33,8 @@ CREATE TYPE AccessLevel AS ENUM ('view', 'edit', 'all');
 CREATE TYPE MediaStatus AS ENUM ('temp', 'attached', 'removed');
 
 CREATE TYPE MediaAccess AS ENUM ('owner', 'group', 'public');
+
+CREATE TYPE AccountType AS ENUM ('self', 'external');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
@@ -89,6 +92,7 @@ CREATE TABLE accounts (
     name VARCHAR(255) NOT NULL,
     category_id INT NOT NULL REFERENCES categories(id),
     balance REAL DEFAULT 0.0,
+    type AccountType DEFAULT 'self',
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
