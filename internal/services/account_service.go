@@ -15,7 +15,7 @@ import (
 )
 
 type AccountService interface {
-	Create(ctx context.Context, item *dto.AccountCreateRequest, userID uuid.UUID) (*models.Account, error)
+	Create(ctx context.Context, account *dto.AccountCreateRequest, userID uuid.UUID) (*models.Account, error)
 	List(ctx context.Context, page, size int, userID uuid.UUID) (*dto.AccountListResponse, error)
 	GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.AccountJoinedResponse, error)
 	Update(ctx context.Context, input *dto.AccountUpdateRequest, id int, userID uuid.UUID) (*dto.AccountJoinedResponse, error)
@@ -31,13 +31,14 @@ func NewAccountService(accountRepo *repositories.AccountRepository) AccountServi
 }
 
 func (s *accountService) Create(ctx context.Context, input *dto.AccountCreateRequest, userID uuid.UUID) (*models.Account, error) {
-	var item models.Account
-	item.UserID = userID
-	item.CategoryID = &input.CategoryID
-	item.Name = &input.Name
-	item.Balance = &input.Balance
+	var account models.Account
+	account.UserID = userID
+	account.CategoryID = &input.CategoryID
+	account.Name = &input.Name
+	account.Balance = &input.Balance
+	account.Type = &input.Type
 
-	err := s.accountRepo.Create(ctx, &item)
+	err := s.accountRepo.Create(ctx, &account)
 	if err != nil {
 		pgErr := server_errors.AsPgError(err)
 		if pgErr != nil {
@@ -47,7 +48,7 @@ func (s *accountService) Create(ctx context.Context, input *dto.AccountCreateReq
 		return nil, &server_errors.InternalError
 	}
 
-	return &item, nil
+	return &account, nil
 }
 
 func (s *accountService) List(ctx context.Context, page, size int, userID uuid.UUID) (*dto.AccountListResponse, error) {
@@ -82,7 +83,7 @@ func (s *accountService) List(ctx context.Context, page, size int, userID uuid.U
 }
 
 func (s *accountService) GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.AccountJoinedResponse, error) {
-	item, err := s.accountRepo.GetByID(ctx, id, userID)
+	account, err := s.accountRepo.GetByID(ctx, id, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
@@ -91,7 +92,7 @@ func (s *accountService) GetByID(ctx context.Context, id int, userID uuid.UUID) 
 		return nil, &server_errors.InternalError
 	}
 
-	return item, nil
+	return account, nil
 }
 
 func (s *accountService) Delete(ctx context.Context, id int, userID uuid.UUID) error {
@@ -108,14 +109,14 @@ func (s *accountService) Delete(ctx context.Context, id int, userID uuid.UUID) e
 }
 
 func (s *accountService) Update(ctx context.Context, input *dto.AccountUpdateRequest, id int, userID uuid.UUID) (*dto.AccountJoinedResponse, error) {
-	var item models.Account
-	item.ID = id
-	item.UserID = userID
-	item.Name = input.Name
-	item.Balance = input.Balance
-	item.CategoryID = input.CategoryID
+	var account models.Account
+	account.ID = id
+	account.UserID = userID
+	account.Name = input.Name
+	account.Balance = input.Balance
+	account.CategoryID = input.CategoryID
 
-	itemJoined, err := s.accountRepo.Update(ctx, &item)
+	accountJoined, err := s.accountRepo.Update(ctx, &account)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &server_errors.ItemNotFound
@@ -129,5 +130,5 @@ func (s *accountService) Update(ctx context.Context, input *dto.AccountUpdateReq
 		return nil, &server_errors.InternalError
 	}
 
-	return itemJoined, nil
+	return accountJoined, nil
 }
