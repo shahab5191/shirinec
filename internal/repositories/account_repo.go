@@ -31,21 +31,77 @@ func NewAccountRepository(db *pgxpool.Pool) AccountRepository {
 }
 
 func (r *accountRepository) Create(ctx context.Context, account *models.Account) error {
-	queryFormat := "INSERT INTO %s (user_id, name, category_id, balance, creation_date, update_date) VALUES ($1, $2, $3, $4, $5, $5) RETURNING id"
+	queryFormat := `
+        INSERT INTO %s
+        (
+            user_id,
+            name,
+            category_id,
+            type,
+            balance,
+            creation_date,
+            update_date
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $6)
+        RETURNING id
+    `
 	query := fmt.Sprintf(queryFormat, r.tableName)
 	currentTime := time.Now().UTC().Truncate(time.Second)
 	account.CreationDate = currentTime
 	account.UpdateDate = currentTime
-	err := r.db.QueryRow(ctx, query, account.UserID, account.Name, account.CategoryID, account.Balance, currentTime).Scan(&account.ID)
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		account.UserID,
+		account.Name,
+		account.CategoryID,
+		account.Type,
+		account.Balance,
+		currentTime,
+	).Scan(&account.ID)
 	return err
 }
 
 func (r *accountRepository) GetByID(ctx context.Context, id int, userID uuid.UUID) (*dto.AccountJoinedResponse, error) {
-	queryFormat := "SELECT a.id, a.user_id, a.name, c.id, c.name, c.color, cm.url, a.balance, a.creation_date, a.update_date FROM %s a LEFT JOIN categories c ON a.category_id = c.id LEFT JOIN media cm ON c.icon_id = cm.id WHERE a.id = $1 AND a.user_id = $2"
+	queryFormat := `
+        SELECT
+            a.id,
+            a.user_id,
+            a.name,
+            c.id,
+            c.name,
+            c.color,
+            cm.url,
+            a.balance,
+            a.creation_date,
+            a.update_date,
+            a.type
+        FROM %s a
+        LEFT JOIN categories c
+            ON a.category_id = c.id
+        LEFT JOIN media cm
+            ON c.icon_id = cm.id
+        WHERE
+            a.id = $1
+            AND
+            a.user_id = $2
+    `
 	query := fmt.Sprintf(queryFormat, r.tableName)
 
 	var item dto.AccountJoinedResponse
-	err := r.db.QueryRow(ctx, query, id, userID).Scan(&item.ID, &item.UserID, &item.Name, &item.CategoryID, &item.CategoryName, &item.CategoryColor, &item.CategoryIconURL, &item.Balance, &item.CreationDate, &item.UpdateDate)
+	err := r.db.QueryRow(ctx, query, id, userID).Scan(
+		&item.ID,
+		&item.UserID,
+		&item.Name,
+		&item.CategoryID,
+		&item.CategoryName,
+		&item.CategoryColor,
+		&item.CategoryIconURL,
+		&item.Balance,
+		&item.CreationDate,
+		&item.UpdateDate,
+		&item.Type,
+	)
 	return &item, err
 }
 
@@ -54,10 +110,29 @@ func (r *accountRepository) List(ctx context.Context, limit, offset int, userID 
 	if err != nil {
 		return nil, 0, err
 	}
-    // TODO
+	// TODO
 	var accounts = make([]dto.AccountJoinedResponse, 0, limit)
-	queryFormat := "SELECT a.id, a.user_id, a.name, c.id, c.name, c.color, cm.url, a.balance, a.creation_date, a.update_date FROM %s a LEFT JOIN categories c ON a.category_id = c.id LEFT JOIN media cm ON c.icon_id = cm.id WHERE a.user_id = $1 LIMIT $2 OFFSET $3"
-    query := fmt.Sprintf(queryFormat, r.tableName)
+	queryFormat := `
+        SELECT
+            a.id,
+            a.user_id,
+            a.name,
+            c.id,
+            c.name,
+            c.color,
+            cm.url,
+            a.balance,
+            a.creation_date,
+            a.update_date,
+            a.type
+        FROM %s a
+        LEFT JOIN categories c
+            ON a.category_id = c.id
+        LEFT JOIN media cm
+            ON c.icon_id = cm.id
+        WHERE a.user_id = $1
+        LIMIT $2 OFFSET $3`
+	query := fmt.Sprintf(queryFormat, r.tableName)
 
 	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 
@@ -68,7 +143,19 @@ func (r *accountRepository) List(ctx context.Context, limit, offset int, userID 
 
 	for rows.Next() {
 		var item dto.AccountJoinedResponse
-		err = rows.Scan(&item.ID, &item.UserID, &item.Name, &item.CategoryID, &item.CategoryName, &item.CategoryColor, &item.CategoryIconURL, &item.Balance, &item.CreationDate, &item.UpdateDate)
+		err = rows.Scan(
+			&item.ID,
+			&item.UserID,
+			&item.Name,
+			&item.CategoryID,
+			&item.CategoryName,
+			&item.CategoryColor,
+			&item.CategoryIconURL,
+			&item.Balance,
+			&item.CreationDate,
+			&item.UpdateDate,
+			&item.Type,
+		)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -102,10 +189,10 @@ func (r *accountRepository) Update(ctx context.Context, account *models.Account)
 		argIndex++
 	}
 
-    if account.Balance != nil {
-        setClauses = append(setClauses, fmt.Sprintf("balance = $%d", argIndex))
-        args = append(args, account.Balance)
-    }
+	if account.Balance != nil {
+		setClauses = append(setClauses, fmt.Sprintf("balance = $%d", argIndex))
+		args = append(args, account.Balance)
+	}
 
 	if len(setClauses) == 0 {
 		return nil, &server_errors.EmptyUpdate

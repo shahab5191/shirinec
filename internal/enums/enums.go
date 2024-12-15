@@ -47,3 +47,10 @@ const (
 	FinancialGroupOwner  FinancialGroupRole = "owner"
 	FinancialGroupMember FinancialGroupRole = "member"
 )
+
+type AccountType string
+
+const (
+	AccountTypeSelf    AccountType = "self"
+	AccoutTypeExternal AccountType = "external"
+)
