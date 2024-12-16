@@ -38,3 +38,17 @@ type AccountUpdateRequest struct {
 	CategoryID *int     `json:"categoryID" binding:"omitempty,number"`
 	Balance    *float64 `json:"balance" binding:"omitempty,number"`
 }
+
+type AccountTransferResultItem struct {
+	ID      int               `json:"id"`
+	Name    string            `json:"name"`
+	Balance float64           `json:"balance"`
+	Change  float64           `json:"change"`
+	Type    enums.AccountType `json:"accountType"`
+}
+
+type AccountTransferResult struct {
+	From AccountTransferResultItem `json:"from"`
+	Dest AccountTransferResultItem `json:"dest"`
+	Date time.Time                 `json:"date"`
+}

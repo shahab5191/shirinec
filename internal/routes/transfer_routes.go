@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"google.golang.org/protobuf/internal/flags"
 	handler "shirinec.com/internal/handlers"
 	"shirinec.com/internal/middlewares"
+	"shirinec.com/internal/services"
 )
 
 func (r *router) setupTransferRouter() {
-    transferService := services.NewTransferSevice(r.Deps.TransferRepo)
+    transferService := services.NewTransferService(r.Deps.TransactionRepo)
     transferHandler := handler.NewTransferHandler(transferService)
 
     flags := middlewares.AuthMiddleWareFlags{

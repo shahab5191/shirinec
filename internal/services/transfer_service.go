@@ -4,28 +4,24 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"shirinec.com/internal/dto"
 	"shirinec.com/internal/repositories"
 )
 
 type TransferService interface {
-	InternalTransfer(ctx context.Context, from, to int, userID uuid.UUID) (float64, error)
-    ExternalTransfer(ctx context.Context, from, ton int, userID uuid.UUID) (float64, error)
+	Transfer(ctx context.Context, input *dto.TransferRequest, userID uuid.UUID) (*dto.AccountTransferResult, error)
 }
 
 type transferService struct {
-	transferRepo repositories.TransferRepository
+	transactionRepo repositories.TransactionRepository
 }
 
-func NewTransferService(transferRepo repositories.TransferRepository) TransferService {
+func NewTransferService(transferRepo repositories.TransactionRepository) TransferService {
 	return &transferService{
-		transferRepo: transferRepo,
+		transactionRepo: transferRepo,
 	}
 }
 
-func (s *transferService) InternalTransfer(ctx context.Context, from, to int, userID uuid.UUID) (float64, error) {
-    return 0, nil
-}
-
-func (s *transferService) ExternalTransfer(ctx context.Context, from, to int, userID uuid.UUID) (float64, error) {
-    return 0, nil
+func (s *transferService) Transfer(ctx context.Context, input *dto.TransferRequest, userID uuid.UUID) (*dto.AccountTransferResult, error) {
+	return nil, nil
 }
