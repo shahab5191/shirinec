@@ -35,6 +35,7 @@ func main() {
 	accountRepo := repositories.NewAccountRepository(database.Pool)
 	mediaRepo := repositories.NewMediaRepository(database.Pool)
 	financialGroupRepo := repositories.NewFinancialGroupRepository(database.Pool)
+	transactionRepo := repositories.NewTransactionRepository(database.Pool)
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		validators.RegisterValidators(v)
@@ -47,6 +48,7 @@ func main() {
 		AccountRepo:        accountRepo,
 		MediaRepo:          mediaRepo,
 		FinancialGroupRepo: financialGroupRepo,
+		TransactionRepo:    transactionRepo,
 	}
 
 	utils.InitLogger()

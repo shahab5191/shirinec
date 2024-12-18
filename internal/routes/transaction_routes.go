@@ -6,7 +6,7 @@ import (
 	"shirinec.com/internal/services"
 )
 
-func (r *router) setupTransferRouter() {
+func (r *router) setupTransactionRouter() {
     transferService := services.NewTransferService(r.Deps.TransactionRepo)
     transferHandler := handler.NewTransferHandler(transferService)
 
@@ -16,5 +16,5 @@ func (r *router) setupTransferRouter() {
 
     authMiddleWare := middlewares.AuthMiddleWare(flags, r.db)
 
-    r.GinEngine.POST("/transfer/:from/:to", authMiddleWare, transferHandler.Transfer)
+    r.GinEngine.POST("/transfer", authMiddleWare, transferHandler.Transfer)
 }
