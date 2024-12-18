@@ -11,4 +11,5 @@ type Dependencies struct {
 	AccountRepo        repositories.AccountRepository
 	MediaRepo          repositories.MediaRepository
 	FinancialGroupRepo repositories.FinancialGroupRepository
+	TransactionRepo    repositories.TransactionRepository
 }
