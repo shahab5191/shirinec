@@ -10,3 +10,8 @@ type PaginationData struct {
 type CreateResponse[T any] struct {
 	Result T `json:"result"`
 }
+
+type ListRequest struct {
+	Page int `form:"page,default=0" binding:"number"`
+	Size int `form:"size,default=10" binding:"number"`
+}

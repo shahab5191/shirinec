@@ -16,6 +16,7 @@ type Router interface {
 	setupMediaRouter()
 	setupFinancialGroupRouter()
     setupTransactionRouter()
+    setupIncomeRouter()
 }
 
 type router struct {
@@ -41,4 +42,5 @@ func (r *router) SetupRouter() {
 	r.setupMediaRouter()
 	r.setupFinancialGroupRouter()
     r.setupTransactionRouter()
+    r.setupIncomeRouter()
 }
