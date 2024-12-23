@@ -101,8 +101,7 @@ CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id),
     account_id INT NOT NULL REFERENCES accounts(id),
-    category_id INT NOT NULL REFERENCES categories(id),
-    amout REAL NOT NULL,
+    amount REAL NOT NULL,
     description TEXT,
     transaction_type TransactionType NOT NULL,
     linked_transaction_id INT REFERENCES transactions(id),
@@ -358,3 +357,28 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER add_owner_to_financial_group AFTER INSERT ON financial_groups
     FOR EACH ROW EXECUTE PROCEDURE add_financial_group_insert_owner();
+
+CREATE OR REPLACE FUNCTION check_transaction_authorization()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS( 
+        SELECT 1 FROM account_access
+        WHERE user_id = NEW.user_id
+        AND account_id = NEW.account_id
+        AND access = ANY(ARRAY['edit', 'all']::AccessLevel[])
+
+        UNION
+
+        SELECT 1 FROM accounts
+        WHERE id = NEW.account_id
+        AND user_id = NEW.user_id
+    ) THEN 
+        RAISE EXCEPTION 'User is not authorized to creaate this transaction'
+            USING ERRCODE = 'S0004';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_transaction_authorization_access BEFORE INSERT ON transactions
+    FOR EACH ROW EXECUTE PROCEDURE check_transaction_authorization();

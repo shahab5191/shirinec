@@ -54,3 +54,11 @@ const (
 	AccountTypeSelf    AccountType = "self"
 	AccoutTypeExternal AccountType = "external"
 )
+
+type TransactionType string
+
+const (
+	TransactionTypeIncome   = "income"
+	TransactionTypeExpense  = "expense"
+	TransactionTypeTransfer = "transfer"
+)

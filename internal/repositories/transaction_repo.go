@@ -7,11 +7,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"shirinec.com/internal/dto"
+	"shirinec.com/internal/enums"
 	"shirinec.com/internal/utils"
 )
 
 type TransactionRepository interface {
 	Transfer(ctx context.Context, from, dest int, amount float64, userID uuid.UUID) (*dto.AccountTransferResult, error)
+	Income(ctx context.Context, accountID int, amount float64, description *string, userID uuid.UUID) (*dto.IncomeJoinedResponse, error)
 }
 
 type transactionRepository struct {
@@ -29,13 +31,13 @@ func (r *transactionRepository) Transfer(ctx context.Context, from, dest int, am
 	if err != nil {
 		return nil, err
 	}
-    defer func() {
-        if err != nil {
-            if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-                utils.Logger.Errorf("failed to rollback transaction: %s", rollbackErr.Error())
-            }
-        }
-    }()
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				utils.Logger.Errorf("failed to rollback transaction: %s", rollbackErr.Error())
+			}
+		}
+	}()
 
 	currentTime := time.Now().UTC().Truncate(time.Second)
 	createTransactionQuery := `
@@ -53,7 +55,7 @@ func (r *transactionRepository) Transfer(ctx context.Context, from, dest int, am
 		userID,
 		from,
 		amount*-1,
-		"transfer",
+		enums.TransactionTypeTransfer,
 		currentTime,
 	).Scan(&firstTransID); err != nil {
 		return nil, err
@@ -65,7 +67,7 @@ func (r *transactionRepository) Transfer(ctx context.Context, from, dest int, am
 		userID,
 		dest,
 		amount,
-		"transfer",
+		enums.TransactionTypeTransfer,
 		currentTime,
 	).Scan(&secondTransID); err != nil {
 		return nil, err
@@ -124,4 +126,51 @@ func (r *transactionRepository) Transfer(ctx context.Context, from, dest int, am
 	result.Date = currentTime
 
 	return &result, nil
+}
+
+func (r *transactionRepository) Income(ctx context.Context, accountID int, amount float64, description *string, userID uuid.UUID) (*dto.IncomeJoinedResponse, error) {
+	var incomeReponse dto.IncomeJoinedResponse
+	var err error
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				utils.Logger.Errorf("failed to rollback transaction: %s", rollbackErr.Error())
+			}
+		}
+	}()
+
+	currentTime := time.Now().UTC()
+
+	query := `
+        INSERT INTO transactions
+        (user_id, account_id, amount, description, transaction_type, creation_date, update_date)
+        VALUES (
+            $1, $2, $3, $4, $5, $6, $6
+        )
+        RETRUNING id
+    `
+
+	if err = tx.QueryRow(ctx, query, userID, accountID, amount, description, enums.TransactionTypeIncome, currentTime).Scan(&incomeReponse.ID); err != nil {
+		return nil, err
+	}
+
+	query = `
+        UPDATE accounts
+        SET balance = balance + $1
+        WHERE id = $2
+        RETURNING id
+    `
+
+    var UpdatedAccountID int
+    if err = tx.QueryRow(ctx, query, amount, accountID).Scan(&UpdatedAccountID); err != nil {
+        return nil, err
+    }
+
+    // TODO CREATE JOINED RESULT
+
+	return nil, nil
 }

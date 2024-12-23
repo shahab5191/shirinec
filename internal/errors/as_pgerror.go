@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	PGForeignKeyViolation  = "23503"
-	PGExceptionDefault     = "P0001"
-	PGCategoryNotFound     = "S0001"
-	PGInvalidMediaRefrence = "S0002"
-    PGUserAlreadyInGroup   = "S0003"
+	PGForeignKeyViolation     = "23503"
+	PGExceptionDefault        = "P0001"
+	PGCategoryNotFound        = "S0001"
+	PGInvalidMediaRefrence    = "S0002"
+	PGUserAlreadyInGroup      = "S0003"
+	PGTransactionUnAuthorized = "S0004"
 )
 
 func AsPgError(err error) error {
@@ -25,10 +26,12 @@ func AsPgError(err error) error {
 			return &InvalidRefrencedEntity
 		case PGCategoryNotFound:
 			return &CategoryNotFound
-        case PGInvalidMediaRefrence:
-            return &InvalidMediaRefrence
-        case PGUserAlreadyInGroup:
-            return &UserAlreadyInFinancialGroup
+		case PGInvalidMediaRefrence:
+			return &InvalidMediaRefrence
+		case PGUserAlreadyInGroup:
+			return &UserAlreadyInFinancialGroup
+        case PGTransactionUnAuthorized:
+            return &Unauthorized
 		default:
 			log.Printf("Undefined Postgresql error: %s", pgErr.Error())
 		}
