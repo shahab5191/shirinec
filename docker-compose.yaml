@@ -1,0 +1,21 @@
+include:
+  - infra.yaml
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5500:5500"
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /src
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/shirinec?sslmode=disable
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis

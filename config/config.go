@@ -33,7 +33,7 @@ var AppConfig *Config
 func Load() {
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("No .env file found!")
+		log.Println("No .env file found!")
 	}
 
 	viper.SetConfigName("config")
